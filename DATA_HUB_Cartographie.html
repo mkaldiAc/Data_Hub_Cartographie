@@ -237,7 +237,10 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const percent=(id,d=date)=>{const ms=db.milestones.filter(m=>m.domainId===id&&m.date<=d).sort((a,b)=>b.date.localeCompare(a.date));return ms.length?ms[0].value:null};
 const delta=(id,d=date)=>{const prev=db.milestones.filter(m=>m.domainId===id&&m.date<d).sort((a,b)=>b.date.localeCompare(a.date))[0];const cur=percent(id,d);return cur==null?null:cur-(prev?.value??0)};
 const color=v=>{if(v===null)return '#fff';const t=Math.max(0,Math.min(100,v))/100,a=[234,241,251],b=[32,56,100];return '#'+a.map((n,i)=>Math.round(n+(b[i]-n)*t).toString(16).padStart(2,'0')).join('')};
-const dates=()=>Array.from(new Set([today(),date,...db.milestones.map(m=>m.date)])).sort();
+const dates=()=>[...new Set([...(db.statementDates||[]),...db.milestones.map(m=>m.date)])].filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+const dayNumber=d=>Math.floor(Date.parse(d+'T00:00:00Z')/86400000);
+const dayLabel=d=>d.split('-').reverse().join('/');
+const nearestDate=(day,list)=>list.reduce((a,b)=>Math.abs(dayNumber(b)-day)<Math.abs(dayNumber(a)-day)?b:a,list[0]);
 const matrixDrafts=new Map();let layoutPending=false;
 function touch({autoSave=true}={}){db.updatedAt=new Date().toISOString();dirty=true;editSerial++;status();render();if(autoSave)queueHtmlAutoSave()}
 function status(){$('storageStatus').textContent=(fileHandle?'● Dossier lié':'● Mode local')+(dirty?' · modifications à enregistrer':'');$('storageInfo').textContent=fileHandle?'Fichier lié : '+fileHandle.name+(dirty?' — modifications non enregistrées dans le dossier.':' — enregistré.'):'Aucun fichier Teams lié. Les modifications sont conservées uniquement dans ce navigateur. Exportez-les ou liez un fichier JSON.'}
@@ -262,7 +265,37 @@ $('resetPositions').addEventListener('click',()=>{
 
 function options(select,empty=false,exclude=''){select.innerHTML=(empty?'<option value="">Tous les domaines</option>':'')+db.domains.filter(d=>d.id!==exclude).map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name)+'</option>').join('')}
 function populate(){options($('groupFilter'),true);$('groupFilter').value=focus;options($('domainParents'),false,$('domainId').value)}
-function dateControls(){const ds=dates();$('dateRange').max=Math.max(0,ds.length-1);$('dateRange').value=Math.max(0,ds.indexOf(date));$('dateInput').value=date;$('dateLabel').textContent=new Date(date+'T12:00:00').toLocaleDateString('fr-FR')+(date>today()?' · prévision':'');}
+function dateControls(){
+ const observations=dates();
+ const timeline=observations.length?observations:[today()];
+ const lo=dayNumber(timeline[0]),hi=dayNumber(timeline[timeline.length-1]);
+ const range=$('dateRange');
+ range.min=String(lo);
+ range.max=String(Math.max(lo+1,hi));
+ range.step='1';
+ range.disabled=observations.length<2;
+ const effective=observations.length?nearestDate(dayNumber(date),observations):today();
+ date=effective;
+ range.value=String(dayNumber(effective));
+ $('dateInput').value=effective;
+ $('dateLabel').textContent=dayLabel(effective)+(effective>today()?' · prévision':'');
+ $('datePointCount').textContent=observations.length
+   ?observations.length+' constat'+(observations.length>1?'s':'')
+   :'Aucun constat enregistré';
+ $('firstDateLabel').textContent=observations.length>1?dayLabel(timeline[0]):'';
+ $('lastDateLabel').textContent=observations.length>1?dayLabel(timeline[timeline.length-1]):'';
+ const duration=Math.max(1,hi-lo);
+ $('dateMarkers').innerHTML=observations.length>1?observations.map((d,i)=>{
+    const progress=(dayNumber(d)-lo)/duration*100;
+    const label=(i===0||i===observations.length-1||d===effective||observations.length<=5)?dayLabel(d):'';
+    return '<button type="button" class="time-stop'+(d===effective?' active':'')+(d>today()?' future':'')+
+      '" data-obs-date="'+d+'" style="left:'+progress.toFixed(5)+'%" title="'+dayLabel(d)+'" aria-label="Afficher le constat du '+dayLabel(d)+'">'+
+      (label?'<span class="time-point-label">'+label+'</span>':'')+'</button>';
+ }).join(''):'';
+ document.querySelectorAll('#dateMarkers .time-stop').forEach(el=>el.addEventListener('click',()=>{
+    date=el.dataset.obsDate;render();
+ }));
+}
 function levels(){const cache=new Map();function lev(id,seen=new Set()){if(cache.has(id))return cache.get(id);if(seen.has(id))return 0;seen.add(id);const d=db.domains.find(x=>x.id===id);let l=d?.parents.length?Math.max(...d.parents.map(p=>lev(p,new Set(seen))))+1:0;cache.set(id,l);return l}db.domains.forEach(d=>lev(d.id));return cache}
 
 const referenceLayout=[
@@ -460,9 +493,9 @@ $('saveCoverageMatrix').onclick=()=>{
 $('filter').oninput=e=>{filter=e.target.value.toLowerCase().trim();renderMap()};
 $('groupFilter').onchange=e=>{focus=e.target.value;renderMap()};
 document.querySelectorAll('[data-layer]').forEach(b=>b.onclick=()=>{layer=b.dataset.layer;document.querySelectorAll('[data-layer]').forEach(x=>x.classList.toggle('active',x===b));renderMap()});
-$('dateRange').oninput=e=>{date=dates()[Number(e.target.value)]||today();render()};
-$('dateInput').onchange=e=>{if(e.target.value){date=e.target.value;render()}};
-$('todayButton').onclick=()=>{date=today();render()};
+$('dateRange').oninput=e=>{const ds=dates();if(!ds.length)return;date=nearestDate(Number(e.target.value),ds);render()};
+$('dateInput').onchange=e=>{if(e.target.value){const ds=dates();date=ds.length?nearestDate(dayNumber(e.target.value),ds):today();render()}};
+$('todayButton').onclick=()=>{const ds=dates();date=ds.length?nearestDate(dayNumber(today()),ds):today();render()};
 function fit(){zoom=1;panX=12;panY=12;renderMap()}$('fitButton').onclick=fit;
 $('zoomIn').onclick=()=>{zoom=Math.min(2.8,zoom*1.2);renderMap()};
 $('zoomOut').onclick=()=>{zoom=Math.max(.35,zoom/1.2);renderMap()};
