@@ -192,13 +192,23 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 
 
 .domain-list-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}.domain-list-actions .btn{padding:7px 10px;font-size:12px}.domain-list-actions strong{min-width:54px;text-align:right}
+
+/* Zoom précis (5 à 500 %), intégré dans l'en-tête sans agrandir le bandeau. */
+.zoom .zoom-custom{display:inline-flex;align-items:center;justify-content:center;gap:3px;
+  border:1px solid #dae3ed;background:#fff;border-radius:5px;padding:1px 6px;color:#29467b;white-space:nowrap}
+.zoom-custom input[type=number]{width:57px;border:0;outline:none;background:transparent;color:#29467b;
+  text-align:right;font-size:13px;font-weight:700;padding:5px 0;font-family:inherit}
+.zoom-custom input[type=number]:focus-visible{outline:2px solid #3560a4;border-radius:3px}
+.zoom-custom input::-webkit-inner-spin-button,.zoom-custom input::-webkit-outer-spin-button{opacity:.6}
+.zoom-custom span{font-size:12px;font-weight:600}
+
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
 <main><header class="top"><div><span class="overline">PILOTAGE DE L'ENTREPÔT DE DONNÉES</span><h1 id="pageTitle">Cartographie des domaines</h1><p id="pageDesc">Une vision partagée de la cible, du réalisé et de la trajectoire.</p></div><div class="actions admin-actions" id="adminActions" hidden><button class="btn" id="saveHtmlDirect" type="button" title="Écrire les données actuellement chargées dans ce fichier HTML">Enregistrer le HTML</button><button class="btn secondary" id="saveHtmlCopy">Enregistrer une copie</button><span id="storageStatus" class="storage-status">● Mode local</span><button class="btn secondary" id="exportButton">Exporter JSON</button><button class="btn secondary" id="importButton" type="button">Importer JSON</button><input id="importFile" type="file" accept=".json,application/json" hidden></div></header>
 <section id="mapPage"><div class="kpis"><article><small>DOMAINES CIBLES</small><strong id="totalDomains">—</strong><span>pools identifiés</span></article><article><small>COUVERTURE MOYENNE</small><strong id="avgCoverage">—</strong><span>sur les domaines suivis</span></article><article><small>DOMAINES ≥ 80 %</small><strong id="matureDomains">—</strong><span>sur la date choisie</span></article><article><small>POINTS DE SUIVI</small><strong id="totalMilestones">—</strong><span>jalons renseignés</span></article></div>
 <div class="panel map-panel" id="mapPanel">
-<div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small></div><div class="zoom"><button id="mapFullscreen" title="Afficher la cartographie en plein écran" type="button">⛶ Plein écran</button><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div>
+<div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small></div><div class="zoom"><button id="mapFullscreen" title="Afficher la cartographie en plein écran" type="button">⛶ Plein écran</button><button id="zoomOut" title="Dézoomer">−</button><label class="zoom-custom" for="zoomInput" title="Saisir un zoom précis en pourcentage"><input id="zoomInput" type="number" min="5" max="500" step="0.5" value="100" aria-label="Zoom en pourcentage"> <span>%</span></label><button id="zoomIn" title="Zoomer">+</button></div></div>
 <div class="map-inline-controls">
   <div class="map-tool-strip">
     <div class="toggle" aria-label="Calque affiché"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div>
@@ -217,7 +227,7 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 <div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glissez un pool pour le repositionner · Glissez le fond pour naviguer</div></div><div class="legend" id="legend"></div></div>
 <div class="detail panel" id="detail"><div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div></div>
 </section>
-<section id="adminPage" hidden><div class="json-import-status" id="jsonImportStatus" role="status">Exportez votre référentiel avant chaque migration. Les JSON des versions précédentes restent compatibles.</div><div class="admin-tabs" role="tablist" aria-label="Administration"><button class="active" role="tab" aria-selected="true" aria-controls="coverageAdmin" data-admin-tab="coverage">Couverture des données</button><button role="tab" aria-selected="false" aria-controls="domainAdmin" data-admin-tab="domains">Domaines & dépendances</button></div><div id="domainAdmin" role="tabpanel" hidden><div class="two-col"><div class="panel admin-panel"><h2>Domaines de données</h2><p class="muted">Ajoutez un domaine indépendant ou reliez-le à plusieurs domaines existants.</p><form id="domainForm"><input type="hidden" id="domainId"><label>Nom du domaine <input id="domainName" required maxlength="90" placeholder="Ex. Maintenance patrimoniale"></label><label>Description <textarea id="domainDescription" rows="2" placeholder="Périmètre du pool de données"></textarea></label><label>Dépendances (plusieurs choix possibles)<select multiple id="domainParents" size="7"></select><small>Ctrl + clic pour sélectionner plusieurs parents. Laissez vide pour un domaine autonome.</small></label><div class="form-actions"><button class="btn" type="submit">Enregistrer le domaine</button><button class="btn secondary" type="button" id="resetDomain">Nouveau</button><button class="btn danger" type="button" id="deleteDomain" hidden>Supprimer</button></div></form></div></div><div class="panel admin-panel"><div class="admin-help"><b>Disposition de la carte</b><p>Les pools peuvent être déplacés directement sur la cartographie. Leur placement est conservé dans le fichier HTML lors de l’enregistrement.</p><button id="resetPositions" type="button" class="btn secondary">Réinitialiser le placement</button></div></div><div class="panel admin-panel"><h2>Référentiel des domaines</h2><div id="domainTable"></div></div></div><div id="coverageAdmin" role="tabpanel"><div class="panel admin-panel"><div class="coverage-head"><div><h2>Matrice de couverture</h2><p class="muted">Chaque ligne correspond à un domaine et chaque colonne à une date de constat. Une cellule vide signifie « non renseigné ».</p></div><div class="form-actions"><label>Nouvelle date <input id="newStatementDate" type="date"></label><button class="btn" id="addStatementDate" type="button">Ajouter une date</button></div></div><div class="coverage-table-wrap"><table id="coverageMatrix" class="coverage-table"></table></div><div class="coverage-actions"><span id="matrixStatus" role="status" class="muted"></span><button class="btn" id="saveCoverageMatrix">Enregistrer les couvertures</button></div></div></div></section>
+<section id="adminPage" hidden><div class="json-import-status" id="jsonImportStatus" role="status">Exportez votre référentiel avant chaque migration. Les JSON des versions précédentes restent compatibles.</div><div class="admin-tabs" role="tablist" aria-label="Administration"><button class="active" role="tab" aria-selected="true" aria-controls="coverageAdmin" data-admin-tab="coverage">Couverture des données</button><button role="tab" aria-selected="false" aria-controls="domainAdmin" data-admin-tab="domains">Domaines & dépendances</button></div><div id="domainAdmin" role="tabpanel" hidden><div class="two-col"><div class="panel admin-panel"><h2>Domaines de données</h2><p class="muted">Ajoutez un domaine indépendant ou reliez-le à plusieurs domaines existants.</p><form id="domainForm"><input type="hidden" id="domainId"><label>Nom du domaine <input id="domainName" required maxlength="90" placeholder="Ex. Maintenance patrimoniale"></label><label>Description <textarea id="domainDescription" rows="2" placeholder="Périmètre du pool de données"></textarea></label><label>Dépendances (plusieurs choix possibles)<select multiple id="domainParents" size="7"></select><small>Ctrl + clic pour sélectionner plusieurs parents. Laissez vide pour un domaine autonome.</small></label><div class="form-actions"><button class="btn" type="submit">Enregistrer le domaine</button><button class="btn secondary" type="button" id="resetDomain">Nouveau</button><button class="btn danger" type="button" id="deleteDomain" hidden>Supprimer</button></div></form></div></div><div class="panel admin-panel"><h2>Référentiel des domaines</h2><div id="domainTable"></div></div></div><div id="coverageAdmin" role="tabpanel"><div class="panel admin-panel"><div class="coverage-head"><div><h2>Matrice de couverture</h2><p class="muted">Chaque ligne correspond à un domaine et chaque colonne à une date de constat. Une cellule vide signifie « non renseigné ».</p></div><div class="form-actions"><label>Nouvelle date <input id="newStatementDate" type="date"></label><button class="btn" id="addStatementDate" type="button">Ajouter une date</button></div></div><div class="coverage-table-wrap"><table id="coverageMatrix" class="coverage-table"></table></div><div class="coverage-actions"><span id="matrixStatus" role="status" class="muted"></span><button class="btn" id="saveCoverageMatrix">Enregistrer les couvertures</button></div></div></div></section>
 <section id="storagePage" hidden><div class="panel admin-panel"><h2>Un seul fichier HTML, toutes les données intégrées</h2><p>Les domaines, dépendances et jalons de couverture sont intégrés dans ce fichier HTML. Pour modifier le fichier lui-même, cliquez sur <b>Enregistrer</b>, puis sélectionnez le fichier HTML ouvert à l’écran (première utilisation de la session). Autorisez l’écriture dans Edge/Chrome. Après la première autorisation, les modifications de domaines et de jalons sont automatiquement enregistrées dans ce HTML. Le fichier reste autonome et peut être envoyé à un collègue.</p><p><b>Enregistrer une copie</b> crée une nouvelle version à envoyer ou à archiver, sans toucher au fichier original. La version active et les modifications non sauvegardées sont indiquées en haut de l’écran.</p><div id="htmlSaveMessage" class="notice" role="status">Document ouvert. Aucune modification non enregistrée.</div><p class="muted">Le navigateur n’identifie pas automatiquement le fichier qui a servi à ouvrir la page : lors de la première sauvegarde, choisissez explicitement ce même fichier. Si le fichier a été modifié ailleurs, l’enregistrement sera refusé pour éviter un écrasement. Utilisation recommandée : Microsoft Edge sur Windows. En cas de refus ou de navigateur non compatible, « Enregistrer une copie » utilise un téléchargement standard.</p></div><div hidden><div class="panel admin-panel"><h2>Fichier de données partagé</h2><p>Choisissez un fichier JSON dans un dossier Teams <b>synchronisé localement avec OneDrive</b> et ouvert dans <b>Edge ou Chrome</b>. Les modifications sont alors enregistrées dans ce fichier lorsque vous cliquez sur « Enregistrer sur le dossier ». Les autres collaborateurs doivent recharger le fichier pour voir les changements.</p><div class="form-actions"><button id="openShared" class="btn">Ouvrir un fichier existant</button><button id="createShared" class="btn secondary">Créer un fichier dans un dossier</button><button id="saveShared" class="btn secondary">Enregistrer sur le dossier</button><button id="reloadShared" class="btn secondary">Recharger</button></div><div id="storageInfo" class="notice"></div><h3>Important pour le travail collaboratif</h3><p>La synchronisation OneDrive n'est pas une base de données transactionnelle : deux personnes modifiant le même fichier en parallèle peuvent créer un conflit. Pour des saisies simultanées fiables et des droits centralisés, utilisez une application hébergée avec Microsoft Graph / SharePoint List ou une API sécurisée.</p><p>La publication d'un HTML dans les « Fichiers » Teams n'en fait pas automatiquement une application web consultable. Pour un accès via URL, hébergez les fichiers statiques sur un site interne (Azure Static Web Apps, par exemple), éventuellement intégré en onglet Teams.</p></div></div></section>
 <footer>DATA HUB · Cartographie des pools · Prototype opérationnel statique</footer></main></div><script id="data-hub-embedded-state" type="application/json">{"version":1,"bootstrap":true,"revision":"seed-data-hub-cartographie-2026-10-13"}</script><script>
 /* DATA HUB — application statique autonome, sans CDN ni API. */
@@ -292,10 +302,6 @@ function openAdminTab(tab){
 }
 document.querySelectorAll('[data-admin-tab]').forEach(b=>b.addEventListener('click',()=>openAdminTab(b.dataset.adminTab)));
 openAdminTab('coverage');
-$('resetPositions').addEventListener('click',()=>{
-  if(!confirm('Réinitialiser la disposition de tous les pools ?'))return;
-  db.positions={};layoutPending=true;touch({autoSave:false});if(!linkedHtmlHandle)saveHtmlSameFile();else queueHtmlAutoSave();
-});
 
 function options(select,empty=false,exclude=''){select.innerHTML=(empty?'<option value="">Tous les domaines</option>':'')+db.domains.filter(d=>d.id!==exclude).map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name)+'</option>').join('')}
 function populate(){options($('domainParents'),false,$('domainId').value)}
@@ -443,7 +449,7 @@ function renderMap(){
     g.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selected=obj.id;renderMap();renderDetail()}});
   }
   $('mapCount').textContent=db.domains.length+' domaines · '+db.domains.reduce((n,o)=>n+o.parents.length,0)+' dépendances';
-  $('zoomIndicator').textContent=Math.round(zoom*100)+' %';
+  $('zoomInput').value=String(Number((zoom*100).toFixed(1)));
   $('legend').innerHTML=layer==='structure'?'Domaines et dépendances':layer==='coverage'?[0,25,50,75,100].map(n=>'<span><i style="background:'+color(n)+';border:1px solid #b9cbdc"></i>'+n+' %</span>').join('')+'<span>□ Non renseigné</span>':'Évolution en points depuis le dernier jalon';
 }
 function renderDetail(){let o=db.domains.find(x=>x.id===selected);if(!o){$('detail').innerHTML='<div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div>';return}let m=db.milestones.filter(x=>x.domainId===o.id).sort((a,b)=>a.date.localeCompare(b.date));let value=percent(o.id);$('detail').innerHTML='<div class="detail-head"><div><h2>'+esc(o.name)+'</h2><p>'+esc(o.description||'Aucune description renseignée')+'</p></div><button class="btn secondary" id="editSelected">Administrer ce domaine</button></div><div class="details-grid"><div><div class="big-percent">'+(value===null?'—':value+' %')+'</div><small>Couverture au '+esc(date)+'</small><p class="muted">'+esc(o.parents.map(id=>db.domains.find(x=>x.id===id)?.name||id).join(' · ')||'Domaine autonome')+'</p></div><div><b>Trajectoire de couverture</b><div class="mini-timeline" style="margin-top:10px">'+(m.length?m.map(x=>'<span><b>'+x.value+' %</b><small>'+esc(x.date)+(x.date>today()?' · prévu':'')+'</small>'+esc(x.note)+'</span>').join(''):'<span>Aucun jalon de couverture enregistré.</span>')+'</div></div></div>';$('editSelected').onclick=()=>{go('admin');openAdminTab('domains');editDomain(o.id)}}
@@ -546,21 +552,51 @@ $('saveCoverageMatrix').onclick=()=>{
 };
 document.querySelectorAll('[data-layer]').forEach(b=>b.onclick=()=>{layer=b.dataset.layer;document.querySelectorAll('[data-layer]').forEach(x=>x.classList.toggle('active',x===b));renderMap()});
 $('dateRange').oninput=e=>{const ds=dates();if(!ds.length)return;date=nearestDate(Number(e.target.value),ds);render()};
+const MIN_ZOOM=.05,MAX_ZOOM=5;
+function setZoom(nextZoom){
+  if(!Number.isFinite(nextZoom))return;
+  const next=Math.min(MAX_ZOOM,Math.max(MIN_ZOOM,nextZoom));
+  const d=positions();
+  // Préserver le centre visible pendant un changement de zoom.
+  const centerX=d.width/2,centerY=d.height/2;
+  const worldX=(centerX-panX)/zoom,worldY=(centerY-panY)/zoom;
+  zoom=next;
+  panX=centerX-worldX*zoom;panY=centerY-worldY*zoom;
+  renderMap();
+}
 function fit(){
   const d=positions(),ps=[...d.pos.values()];
-  if(!ps.length){zoom=1;panX=45;panY=45;renderMap();return}
+  if(!ps.length){zoom=1;panX=20;panY=20;renderMap();return}
   const minX=Math.min(...ps.map(p=>p.x)),maxX=Math.max(...ps.map(p=>p.x+p.w));
   const minY=Math.min(...ps.map(p=>p.y)),maxY=Math.max(...ps.map(p=>p.y+p.h));
-  const padding=60;
-  zoom=Math.max(.15,Math.min(1,(d.width-2*padding)/Math.max(1,maxX-minX),
-                                  (d.height-2*padding)/Math.max(1,maxY-minY)));
-  panX=(d.width-(maxX-minX)*zoom)/2-minX*zoom;
-  panY=(d.height-(maxY-minY)*zoom)/2-minY*zoom;
+  const rect=$('mapSvg').getBoundingClientRect();
+  if(rect.width<=0||rect.height<=0)return;
+  // preserveAspectRatio="meet" laisse des bandes inutilisées lorsque les ratios divergent.
+  // On tient compte de l'échelle SVG réelle, puis on place le premier cartouche près
+  // des bords haut et gauche avec seulement 22 pixels de marge.
+  const unitPixels=Math.min(rect.width/d.width,rect.height/d.height);
+  const offsetX=(rect.width-d.width*unitPixels)/2;
+  const offsetY=(rect.height-d.height*unitPixels)/2;
+  const margin=22;
+  const fitX=(rect.width-2*margin)/(Math.max(1,maxX-minX)*unitPixels);
+  const fitY=(rect.height-2*margin)/(Math.max(1,maxY-minY)*unitPixels);
+  zoom=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,fitX,fitY));
+  panX=(margin-offsetX)/unitPixels-minX*zoom;
+  panY=(margin-offsetY)/unitPixels-minY*zoom;
   renderMap();
 }
 $('fitButton').onclick=fit;
-$('zoomIn').onclick=()=>{zoom=Math.min(2.8,zoom*1.2);renderMap()};
-$('zoomOut').onclick=()=>{zoom=Math.max(.35,zoom/1.2);renderMap()};
+$('zoomIn').onclick=()=>setZoom(zoom+.1);
+$('zoomOut').onclick=()=>setZoom(zoom-.1);
+$('zoomInput').addEventListener('change',e=>{
+  const requested=Number(e.target.value);
+  if(!Number.isFinite(requested)||requested<5||requested>500){
+    alert('Le zoom doit être compris entre 5 % et 500 %.');
+    e.target.value=String(Number((zoom*100).toFixed(1)));
+    return;
+  }
+  setZoom(requested/100);
+});
 
 const mapPanel=$('mapPanel');
 function isMapFull(){return document.fullscreenElement===mapPanel||mapPanel.classList.contains('fullscreen-fallback')}
@@ -590,7 +626,7 @@ document.addEventListener('keydown',e=>{
  }
 });
 
-const viewport=$('mapViewport');viewport.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(2.8,Math.max(.35,zoom*(e.deltaY<0?1.12:.89)));renderMap()},{passive:false});
+const viewport=$('mapViewport');viewport.addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.12:.89))},{passive:false});
 function screenSvgScale(){
   const rect=$('mapSvg').getBoundingClientRect(),v=$('mapSvg').viewBox.baseVal;
   return Math.min(rect.width/v.width,rect.height/v.height);
