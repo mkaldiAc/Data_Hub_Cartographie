@@ -91,12 +91,19 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 #coverageMatrix tbody th.domain-column{min-width:300px}
 #coverageMatrix .matrix-value{min-width:72px!important;max-width:96px!important}
 #coverageMatrix .unit{padding-left:5px;color:#5e6a7d}
+
+/* Cartouches confortables pour la lecture et choix du fond Aiguillon */
+.node text{font-size:23px!important;letter-spacing:0!important;font-weight:700!important}
+.node .percent{font-size:17px!important}
+.map-background-control{display:inline-flex!important;align-items:center!important;gap:8px;white-space:nowrap;font-size:12px!important;font-weight:700;color:#29467b!important}
+.map-background-control input[type="color"]{width:39px;height:35px;cursor:pointer;padding:2px;border-radius:6px;border:1px solid #c9d2de;background:#fff}
+#mapViewport{background-image:none!important}
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
 <main><header class="top"><div><span class="overline">PILOTAGE DE L'ENTREPÔT DE DONNÉES</span><h1 id="pageTitle">Cartographie des domaines</h1><p id="pageDesc">Une vision partagée de la cible, du réalisé et de la trajectoire.</p></div><div class="actions admin-actions" id="adminActions" hidden><button class="btn secondary" id="saveHtmlCopy">Enregistrer une copie</button><span id="storageStatus" class="storage-status">● Mode local</span><button class="btn secondary" id="exportButton">Exporter JSON</button></div></header>
 <section id="mapPage"><div class="kpis"><article><small>DOMAINES CIBLES</small><strong id="totalDomains">—</strong><span>pools identifiés</span></article><article><small>COUVERTURE MOYENNE</small><strong id="avgCoverage">—</strong><span>sur les domaines suivis</span></article><article><small>DOMAINES ≥ 80 %</small><strong id="matureDomains">—</strong><span>sur la date choisie</span></article><article><small>POINTS DE SUIVI</small><strong id="totalMilestones">—</strong><span>jalons renseignés</span></article></div>
-<div class="panel toolbar"><div class="toolrow"><div class="toggle"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div><label class="search">⌕ <input id="filter" placeholder="Rechercher un domaine…"></label><label>Focus <select id="groupFilter"><option value="">Tous les domaines</option></select></label><button class="btn secondary" id="fitButton">⊞ Recentrer</button><button class="btn" id="saveMapLayout" type="button" title="Enregistrer les coordonnées des pools dans le fichier HTML">Enregistrer le placement</button></div><div class="timeline"><div><label for="dateRange">Date d'observation <strong id="dateLabel"></strong></label><input type="range" id="dateRange" min="0" max="0" value="0"></div><div class="date-controls"><input type="date" id="dateInput"><button id="todayButton" class="btn secondary">Aujourd'hui</button></div></div></div>
+<div class="panel toolbar"><div class="toolrow"><div class="toggle"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div><label class="search">⌕ <input id="filter" placeholder="Rechercher un domaine…"></label><label>Focus <select id="groupFilter"><option value="">Tous les domaines</option></select></label><button class="btn secondary" id="fitButton">⊞ Recentrer</button><label class="map-background-control" for="mapBackgroundPicker">Fond <input id="mapBackgroundPicker" type="color" value="#ffffff" title="Choisir la couleur de fond de la cartographie"></label><button class="btn" id="saveMapLayout" type="button" title="Enregistrer les positions et le fond dans le fichier HTML">Enregistrer la carte</button></div><div class="timeline"><div><label for="dateRange">Date d'observation <strong id="dateLabel"></strong></label><input type="range" id="dateRange" min="0" max="0" value="0"></div><div class="date-controls"><input type="date" id="dateInput"><button id="todayButton" class="btn secondary">Aujourd'hui</button></div></div></div>
 <div class="map-placement-notice" role="status" id="mapPlacementMessage">Déplacez librement les pools puis cliquez sur « Enregistrer le placement ».</div><div class="panel map-panel" id="mapPanel"><div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small><small class="map-subtitle">Vue verticale · ramifications métier · placement personnalisable</small></div><div class="zoom"><button id="mapFullscreen" title="Afficher la cartographie en plein écran" type="button">⛶ Plein écran</button><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div><div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glissez un pool pour le repositionner · Glissez le fond pour naviguer</div></div><div class="legend" id="legend"></div></div>
 <div class="detail panel" id="detail"><div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div></div>
 </section>
@@ -143,8 +150,8 @@ const names=[
 ['Impayés','Quittancement - relevés de comptes'],
 ['Contentieux CSR','Impayés']
 ];
-function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:1,domains,milestones:[],positions:{},statementDates:[],updatedAt:new Date().toISOString()}}
-function valid(raw){if(!raw||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {id:d.id,name:d.name.slice(0,100),description:String(d.description||'').slice(0,1000),parents:d.parents}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>({id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)}));if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');const positions={};if(raw.positions&&typeof raw.positions==='object')for(const [id,p] of Object.entries(raw.positions)){if(ids.has(id)&&Number.isFinite(p?.x)&&Number.isFinite(p?.y))positions[id]={x:Math.round(p.x),y:Math.round(p.y)}}const statementDates=[...new Set([...(Array.isArray(raw.statementDates)?raw.statementDates:[]),...ms.map(m=>m.date)])].filter(d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();return {version:1,domains:ds,milestones:ms,positions,statementDates,updatedAt:raw.updatedAt||new Date().toISOString()}}
+function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:1,domains,milestones:[],positions:{},statementDates:[],mapBackground:'#ffffff',updatedAt:new Date().toISOString()}}
+function valid(raw){if(!raw||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {id:d.id,name:d.name.slice(0,100),description:String(d.description||'').slice(0,1000),parents:d.parents}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>({id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)}));if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');const mapBackground=(typeof raw.mapBackground==='string'&&/^#[0-9a-fA-F]{6}$/.test(raw.mapBackground))?raw.mapBackground.toLowerCase():'#ffffff';const positions={};if(raw.positions&&typeof raw.positions==='object')for(const [id,p] of Object.entries(raw.positions)){if(ids.has(id)&&Number.isFinite(p?.x)&&Number.isFinite(p?.y))positions[id]={x:Math.round(p.x),y:Math.round(p.y)}}const statementDates=[...new Set([...(Array.isArray(raw.statementDates)?raw.statementDates:[]),...ms.map(m=>m.date)])].filter(d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();return {version:1,domains:ds,milestones:ms,positions,statementDates,mapBackground,updatedAt:raw.updatedAt||new Date().toISOString()}}
 const uid=()=>globalThis.crypto?.randomUUID?.()||('id-'+Date.now()+'-'+Math.random().toString(36).slice(2));
 const today=()=>new Date().toLocaleDateString('sv-SE');
 let db;try{const embedded=JSON.parse(document.getElementById('data-hub-embedded-state').textContent);db=embedded.bootstrap?sample():valid(embedded)}catch(e){alert('Le contenu embarqué est invalide : '+e.message);db=sample()}
@@ -229,22 +236,22 @@ function positions(){
     const ref=initial.get(o.name);
     const fallback=ref?[ref.x,ref.y]:[300+(i%6)*columnSize,1200+Math.floor(i/6)*rowSize];
     const p=current[o.id]||{x:fallback[0],y:fallback[1]};
-    pos.set(o.id,{x:p.x,y:p.y,w:228,h:86});
+    pos.set(o.id,{x:p.x,y:p.y,w:264,h:104});
   }
   return {pos,width:Math.max(width,...[...pos.values()].map(p=>p.x+p.w+85)),height:Math.max(height,...[...pos.values()].map(p=>p.y+p.h+100))};
 }
 function drawText(g,name,v=null){
   const words=name.split(/\s+/),lines=[];
   let line='';
-  const limit=v===null?23:20;
+  const limit=v===null?22:19;
   for(const word of words){
     if((line+' '+word).trim().length>limit&&line){lines.push(line);line=word}
     else line=(line+' '+word).trim();
   }
   if(line)lines.push(line);
   if(lines.length>3)lines.splice(2,lines.length-2,lines.slice(2).join(' ').slice(0,23)+'…');
-  const start=lines.length===1?48:lines.length===2?37:24;
-  lines.forEach((part,i)=>{const e=newSvg('text',{x:114,y:start+i*23,'text-anchor':'middle'},g);e.textContent=part});
+  const start=lines.length===1?59:lines.length===2?46:30;
+  lines.forEach((part,i)=>{const e=newSvg('text',{x:132,y:start+i*27,'text-anchor':'middle'},g);e.textContent=part});
 }
 function linkCurve(a,b){
   const ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2;
@@ -261,6 +268,8 @@ function renderMap(){
   const d=positions(),svg=$('mapSvg');
   svg.textContent='';
   svg.setAttribute('viewBox','0 0 '+d.width+' '+d.height);
+  $('mapBackgroundPicker').value=db.mapBackground||'#ffffff';
+  $('mapViewport').style.background=db.mapBackground||'#ffffff';
   const outer=newSvg('g',{transform:'translate('+panX+' '+panY+') scale('+zoom+')'},svg);
   const focusDesc=new Set();
   function walk(id){if(focusDesc.has(id))return;focusDesc.add(id);db.domains.filter(o=>o.parents.includes(id)).forEach(o=>walk(o.id))}
@@ -284,7 +293,7 @@ function renderMap(){
     if(layer!=='structure'){
       newSvg('rect',{x:0,y:p.h-6,width:p.w,height:6,rx:3,fill:'#ecf0f4',stroke:'none'},g);
       newSvg('rect',{x:0,y:p.h-6,width:p.w*(Math.abs(val||0)/100),height:6,rx:3,fill:color(val),stroke:'none'},g);
-      const pc=newSvg('text',{class:'percent',x:211,y:19,'text-anchor':'end',style:'fill:'+color(val)},g);
+      const pc=newSvg('text',{class:'percent',x:245,y:22,'text-anchor':'end',style:'fill:'+color(val)},g);
       pc.textContent=val===null?'—':layer==='delta'?(val>0?'+':'')+val+' pt':val+' %';
     }
     drawText(g,obj.name,val);if(layer==='coverage'&&percent(obj.id)>=65){g.querySelectorAll('text').forEach(t=>t.style.fill='#fff')}
@@ -412,7 +421,11 @@ document.addEventListener('keydown',e=>{
 
 const viewport=$('mapViewport');viewport.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(2.8,Math.max(.35,zoom*(e.deltaY<0?1.12:.89)));renderMap()},{passive:false});
 viewport.addEventListener('pointerdown',e=>{if(e.target.closest('.node'))return;drag={x:e.clientX,y:e.clientY,px:panX,py:panY};viewport.setPointerCapture(e.pointerId)});viewport.addEventListener('pointermove',e=>{if(nodeDrag){const dx=(e.clientX-nodeDrag.startX)*nodeDrag.scaleX,dy=(e.clientY-nodeDrag.startY)*nodeDrag.scaleY;if(Math.abs(dx)>4||Math.abs(dy)>4)nodeDrag.moved=true;if(nodeDrag.moved){db.positions[nodeDrag.id]={x:Math.round(Math.max(10,nodeDrag.x+dx)),y:Math.round(Math.max(10,nodeDrag.y+dy))};renderMap()}return}if(!drag)return;const rect=viewport.getBoundingClientRect(),logical=$('mapSvg').viewBox.baseVal;panX=drag.px+(e.clientX-drag.x)*logical.width/rect.width;panY=drag.py+(e.clientY-drag.y)*logical.height/rect.height;renderMap()});viewport.addEventListener('pointerup',()=>{drag=null;if(nodeDrag){const n=nodeDrag;nodeDrag=null;if(n.moved){layoutPending=true;touch({autoSave:false});}else{selected=n.id;renderMap();renderDetail()}}});
-$('saveMapLayout').addEventListener('click',async()=>{if(nodeDrag)return;await saveHtmlSameFile();});viewport.addEventListener('pointercancel',()=>{nodeDrag=null;drag=null;renderMap()});
+$('saveMapLayout').addEventListener('click',async()=>{if(nodeDrag)return;await saveHtmlSameFile()});
+$('mapBackgroundPicker').addEventListener('input',event=>{
+ if(event.target.value===db.mapBackground)return;
+ db.mapBackground=event.target.value;layoutPending=true;touch({autoSave:false});
+});viewport.addEventListener('pointercancel',()=>{nodeDrag=null;drag=null;renderMap()});
 function download(){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.href=url;a.download='data-hub-cartographie.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 $('exportButton').onclick=download;
 const supported=()=>!!window.showOpenFilePicker&&!!window.showSaveFilePicker;
@@ -424,7 +437,8 @@ $('saveShared').onclick=async()=>{try{await writeShared()}catch(e){alert(e.messa
 $('reloadShared').onclick=async()=>{if(!fileHandle){alert('Aucun fichier lié');return}try{await loadHandle(fileHandle)}catch(e){alert(e.message)}};
 $('importButton').onclick=()=>$('importFile').click();
 $('importFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{if(dirty&&!confirm('Remplacer les modifications locales ?'))return;db=valid(JSON.parse(await f.text()));fileHandle=null;dirty=true;selected=null;render();go('map')}catch(err){alert(err.message)}finally{e.target.value=''}};
-$('milestoneDate').value=today();resetDomain();render();go('map');
+// Ancien champ milestoneDate supprimé avec la migration de la matrice.
+resetDomain();render();go('map');
 
 
 /* Sauvegarde du document HTML autonome : API File System Access. */
@@ -442,8 +456,8 @@ status=function(){
   label.style.color=dirty?'#a85c00':'#137a55';
   const placement=$('mapPlacementMessage');
   if(placement)placement.textContent=layoutPending
-    ? 'Placement modifié : cliquez sur « Enregistrer le placement » pour conserver la disposition.'
-    : 'Déplacez les cartouches puis cliquez sur « Enregistrer le placement » pour conserver leur disposition.';
+    ? 'Carte modifiée : cliquez sur « Enregistrer la carte » pour conserver les positions et le fond.'
+    : 'Déplacez les cartouches, choisissez un fond puis cliquez sur « Enregistrer la carte ».';
 };
 const writeNotice=message=>{document.getElementById('htmlSaveMessage').textContent=message};
 function extractHtmlPayload(source){
@@ -492,6 +506,7 @@ async function verifyAccess(handle){
 }
 
 function sameData(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function mergeBackground(base,local,remote){const lc=local!==base,rc=remote!==base;if(lc&&rc&&local!==remote)throw Error('Conflit sur le fond de carte.');return lc?local:remote}
 function mergePositions(base,local,remote){
   const output={};
   for(const id of new Set([...Object.keys(base),...Object.keys(local),...Object.keys(remote)])){
@@ -526,6 +541,7 @@ function mergeThreeWay(base,local,remote){
     domains:mergeSet('le domaine',base.domains,local.domains,remote.domains,x=>x.id),
     milestones:mergeSet('le jalon',base.milestones,local.milestones,remote.milestones,x=>x.domainId+'|'+x.date),
     positions:mergePositions(base.positions||{},local.positions||{},remote.positions||{}),
+    mapBackground:mergeBackground(base.mapBackground||'#ffffff',local.mapBackground||'#ffffff',remote.mapBackground||'#ffffff'),
     statementDates:[...new Set([...(local.statementDates||[]),...(remote.statementDates||[])])].sort(),
     updatedAt:new Date().toISOString()});
 }
@@ -563,7 +579,7 @@ async function saveHtmlSameFile(options={}){
     const diverged=disk.revision!==currentRevision ||
       !sameData(remote.domains,persistedState.domains) ||
       !sameData(remote.milestones,persistedState.milestones) ||
-      !sameData(remote.positions||{},persistedState.positions||{}) || !sameData(remote.statementDates||[],persistedState.statementDates||[]);
+      !sameData(remote.positions||{},persistedState.positions||{}) || !sameData(remote.statementDates||[],persistedState.statementDates||[]) || (remote.mapBackground||'#ffffff')!==(persistedState.mapBackground||'#ffffff');
     const proposed=diverged?mergeThreeWay(persistedState,local,remote):local;
     if(!dirty){
       db=remote;persistedState=structuredClone(remote);currentRevision=disk.revision;
