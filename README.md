@@ -185,3 +185,10 @@ Le test final des interactions graphiques dans Chrome est à réaliser sur le fi
 - **Recentrer** recalcule le zoom et la translation à partir de tous les domaines, y compris en positions négatives ou éloignées. Les coordonnées restent sauvegardées dans `positions` lors de **Enregistrer la carte**.
 - Dans **Administration → Domaines & dépendances → Référentiel des domaines**, chaque ligne possède désormais **Renommer**. Le nom peut aussi être édité dans la fiche du domaine. L'ID technique est conservé, donc les jalons de couverture, liens de dépendance et positions ne sont pas réinitialisés. Un nom en doublon est refusé.
 - Contrôles réalisés : compilation JS, sérialisation/réimport de coordonnées négatives, positions éloignées et nom modifié, présence de l'action Renommer. Test des gestes graphiques dans Chrome à confirmer sur le poste utilisateur.
+
+## Cadrage optimisé et zoom précis — 13 octobre 2026
+
+- Le bouton **Recentrer** utilise les dimensions effectives de l'élément SVG et son comportement `preserveAspectRatio=meet` pour ajuster la vue à l'emprise réelle des cartouches. La marge visée est d'environ **22 pixels** au lieu du large centrage précédent. Les cartouches négatifs ou éloignés sont inclus.
+- Dans l'en-tête de la carte, le pourcentage est désormais un **champ numérique modifiable**, de **5 à 500 %** (pas de 0,5 % dans le champ). Les boutons `+` et `−` ajustent le zoom de 10 points ; la molette reste utilisable. Les changements de zoom préservent le point central de la vue.
+- Le panneau **Disposition de la carte / Réinitialiser le placement** a été supprimé de **Administration → Domaines & dépendances** ; les positions existantes demeurent dans le JSON sauvegardé.
+- Tests structurels : compilation JavaScript et absence de références DOM aux commandes supprimées. Le rendu visuel exact du cadrage est à vérifier dans Chrome.
