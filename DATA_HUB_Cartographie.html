@@ -588,9 +588,8 @@ $('importFile').onchange=async e=>{
   resetDomain();
   touch({autoSave:false});
   info.textContent='Import validé : '+db.domains.length+' domaines et '+db.statementDates.length+' dates restaurés. Enregistrement dans le HTML en cours…';
-  await saveHtmlSameFile();
-  if(!dirty)info.textContent='Import terminé et enregistré dans le HTML : '+db.domains.length+' domaines, '+db.statementDates.length+' dates, '+db.milestones.length+' taux.';
-  else info.textContent='Import chargé, mais pas encore enregistré dans le HTML. Utilisez « Enregistrer une copie » si nécessaire.';
+  if(linkedHtmlHandle){await saveHtmlSameFile({automatic:true})}
+  info.textContent=!dirty?'Import enregistré dans le HTML.':'Import chargé. Cliquez sur « Enregistrer le HTML » pour conserver ces données dans le fichier ouvert.';
  }catch(err){
   info.textContent='Import refusé : '+err.message;
   alert('Import JSON impossible : '+err.message);
@@ -606,17 +605,14 @@ const currentHtmlLocation=location.protocol==='file:'?decodeURIComponent(locatio
 const originalEmbedded=JSON.parse(standaloneStateElement.textContent);
 let currentRevision=originalEmbedded.revision||'seed', linkedHtmlHandle=null;
 let savedHtmlName=currentHtmlLocation||'DATA_HUB_Cartographie.html';
-let persistedState=structuredClone(db),editSerial=0,saveInProgress=false,autoSaveTimer=null,saveInFlight=null;
+let persistedState=structuredClone(db),editSerial=0,saveInProgress=false,autoSaveTimer=null,saveInFlight=null,importPending=false;
 const oldStatusFunction=status;
 status=function(){
   oldStatusFunction();
   const label=document.getElementById('storageStatus');
   label.textContent=(dirty?(linkedHtmlHandle?'● Sauvegarde en attente…':'● À enregistrer : cliquez « Enregistrer »'):'● Document à jour')+' · '+savedHtmlName;
   label.style.color=dirty?'#a85c00':'#137a55';
-  const placement=$('mapPlacementMessage');
-  if(placement)placement.textContent=layoutPending
-    ? 'Carte modifiée : cliquez sur « Enregistrer la carte » pour conserver les positions et le fond.'
-    : 'Déplacez les cartouches, choisissez un fond puis cliquez sur « Enregistrer la carte ».';
+  $('saveHtmlDirect').textContent=dirty?'Enregistrer le HTML *':'Enregistrer le HTML';
 };
 const writeNotice=message=>{document.getElementById('htmlSaveMessage').textContent=message};
 function extractHtmlPayload(source){
@@ -798,6 +794,7 @@ async function saveHtmlCopy(){
   }
 }
 
+document.getElementById('saveHtmlDirect').addEventListener('click',()=>saveHtmlSameFile());
 document.getElementById('saveHtmlCopy').addEventListener('click',saveHtmlCopy);
 window.addEventListener('beforeunload',event=>{
   if(dirty||matrixDrafts.size>0){event.preventDefault();event.returnValue=''}
