@@ -125,3 +125,10 @@ La cartographie peut être déplacée (glissement du fond) et zoomée (molette o
 - **Contrôles exécutés** : compilation JavaScript ; 35 domaines, 35 positions numériques distinctes, dimensions de carte non nulles ; deux dates de constat conservées après validation JSON ; palette de 0 % et 100 % contrôlée.
 
 **Limite de validation** : ces contrôles sont structurels. Un test visuel et un cycle de sauvegarde/réouverture dans Chrome restent nécessaires sur le poste utilisateur. Si l'ancien document HTML contenait des données modifiées, en faire une copie avant de le remplacer par la nouvelle version, car l'ancienne version ne se met pas à jour d'elle-même.
+
+## Correctif date de constat et sauvegarde du placement — 13 octobre 2026
+
+- La cartographie comporte désormais un bouton **« Enregistrer le placement »**. Le déplacement d'un pool modifie ses coordonnées et affiche un indicateur d'enregistrement en attente ; le bouton sauvegarde explicitement toutes les positions dans le HTML après consentement Chrome (ou dans le fichier déjà autorisé). Les modifications de couverture conservent leur propre sauvegarde.
+- Quand une date de constat est **déjà présente**, le bouton « Ajouter une date » n'affiche plus une alerte : il signale l'existence de cette date et fait défiler la matrice jusqu'à la colonne existante, temporairement surlignée. Si toutes ses valeurs sont vides, la date demeure présente jusqu'à sa suppression volontaire.
+- Les cellules de couverture modifiées mais **non encore validées** sont conservées lors du rafraîchissement de la matrice, notamment après ajout d'une date. Le navigateur avertit à la fermeture si ces saisies ne sont pas validées.
+- Vérifications réalisées : compilation JS, 35 domaines et coordonnées valides, sérialisation des coordonnées de placement et des dates, présence des commandes dans le HTML autonome. **Un essai réel sous Chrome et la réouverture du fichier restent nécessaires pour confirmer le flux système d'autorisation et d'écriture.**
