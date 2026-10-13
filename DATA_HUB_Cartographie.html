@@ -190,6 +190,8 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 .time-point-label,.time-ends,.map-inline-status{display:none!important}
 @media(max-width:850px){.map-time-caption{flex-basis:145px}.map-time-caption strong{font-size:13px}}
 
+
+.domain-list-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}.domain-list-actions .btn{padding:7px 10px;font-size:12px}.domain-list-actions strong{min-width:54px;text-align:right}
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
@@ -445,11 +447,33 @@ function renderMap(){
   $('legend').innerHTML=layer==='structure'?'Domaines et dépendances':layer==='coverage'?[0,25,50,75,100].map(n=>'<span><i style="background:'+color(n)+';border:1px solid #b9cbdc"></i>'+n+' %</span>').join('')+'<span>□ Non renseigné</span>':'Évolution en points depuis le dernier jalon';
 }
 function renderDetail(){let o=db.domains.find(x=>x.id===selected);if(!o){$('detail').innerHTML='<div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div>';return}let m=db.milestones.filter(x=>x.domainId===o.id).sort((a,b)=>a.date.localeCompare(b.date));let value=percent(o.id);$('detail').innerHTML='<div class="detail-head"><div><h2>'+esc(o.name)+'</h2><p>'+esc(o.description||'Aucune description renseignée')+'</p></div><button class="btn secondary" id="editSelected">Administrer ce domaine</button></div><div class="details-grid"><div><div class="big-percent">'+(value===null?'—':value+' %')+'</div><small>Couverture au '+esc(date)+'</small><p class="muted">'+esc(o.parents.map(id=>db.domains.find(x=>x.id===id)?.name||id).join(' · ')||'Domaine autonome')+'</p></div><div><b>Trajectoire de couverture</b><div class="mini-timeline" style="margin-top:10px">'+(m.length?m.map(x=>'<span><b>'+x.value+' %</b><small>'+esc(x.date)+(x.date>today()?' · prévu':'')+'</small>'+esc(x.note)+'</span>').join(''):'<span>Aucun jalon de couverture enregistré.</span>')+'</div></div></div>';$('editSelected').onclick=()=>{go('admin');openAdminTab('domains');editDomain(o.id)}}
-function renderTable(){$('domainTable').innerHTML='<div class="item-list">'+db.domains.map(d=>'<div class="item"><div><button class="link-btn" data-edit="'+esc(d.id)+'">'+esc(d.name)+'</button><small>'+d.parents.length+' dépendance(s) · '+db.milestones.filter(m=>m.domainId===d.id).length+' jalon(s)</small></div><strong>'+(percent(d.id)??'—')+' %</strong></div>').join('')+'</div>';document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editDomain(b.dataset.edit))}
+function renderTable(){
+ $('domainTable').innerHTML='<div class="item-list">'+db.domains.map(d=>
+  '<div class="item"><div><button class="link-btn" data-edit="'+esc(d.id)+'">'+esc(d.name)+'</button><small>'+d.parents.length+' dépendance(s) · '+db.milestones.filter(m=>m.domainId===d.id).length+' jalon(s)</small></div>'+
+  '<div class="domain-list-actions"><button type="button" class="btn secondary" data-rename="'+esc(d.id)+'">Renommer</button><strong>'+(percent(d.id)??'—')+' %</strong></div></div>').join('')+'</div>';
+ document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editDomain(b.dataset.edit));
+ document.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>renameDomain(b.dataset.rename));
+}
+function renameDomain(id){
+ const target=db.domains.find(x=>x.id===id);if(!target)return;
+ const newName=prompt('Nouveau nom du domaine :',target.name);
+ if(newName===null)return;
+ const trimmed=newName.trim();
+ if(!trimmed||trimmed.length>100){alert('Le nom doit comporter entre 1 et 100 caractères.');return}
+ if(db.domains.some(d=>d.id!==id&&d.name.trim().toLocaleLowerCase('fr')===trimmed.toLocaleLowerCase('fr'))){
+   alert('Ce nom est déjà utilisé par un autre domaine.');return;
+ }
+ if(trimmed===target.name)return;
+ const before=target.name;
+ target.name=trimmed;
+ // L'identifiant reste identique : couverture, dépendances et positions sont inchangées.
+ touch();
+ if(!linkedHtmlHandle)writeNotice('Domaine « '+before+' » renommé. Cliquez sur « Enregistrer le HTML » dans Administration pour conserver la modification.');
+}
 function editDomain(id){const d=db.domains.find(x=>x.id===id);if(!d)return;$('domainId').value=d.id;$('domainName').value=d.name;$('domainDescription').value=d.description;options($('domainParents'),false,id);[...$('domainParents').options].forEach(o=>o.selected=d.parents.includes(o.value));$('deleteDomain').hidden=false;window.scrollTo({top:0,behavior:'smooth'})}
 function resetDomain(){$('domainForm').reset();$('domainId').value='';$('deleteDomain').hidden=true;options($('domainParents'))}
 function render(){dateControls();populate();const vals=db.domains.map(x=>percent(x.id)).filter(x=>x!==null);$('totalDomains').textContent=db.domains.length;$('avgCoverage').textContent=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length)+' %':'—';$('matureDomains').textContent=db.domains.filter(x=>percent(x.id)!==null&&percent(x.id)>=80).length;$('totalMilestones').textContent=db.milestones.length;renderTable();renderCoverageMatrix();renderDetail();renderMap();status()}
-$('domainForm').onsubmit=e=>{e.preventDefault();const id=$('domainId').value||uid();const parents=[...$('domainParents').selectedOptions].map(x=>x.value);const obj={id,name:$('domainName').value.trim(),description:$('domainDescription').value.trim(),parents};if(!obj.name)return;try{const proposed={...db,domains:$('domainId').value?db.domains.map(d=>d.id===id?obj:d):[...db.domains,obj]};db=valid(proposed);resetDomain();touch();if(!linkedHtmlHandle)saveHtmlSameFile();writeNotice(linkedHtmlHandle?'Domaine enregistré dans le fichier HTML.':'Domaine modifié. Pour autoriser la sauvegarde, utilisez le bouton Enregistrer dans Administration.')}catch(err){alert(err.message)}};
+$('domainForm').onsubmit=e=>{e.preventDefault();const id=$('domainId').value||uid();const parents=[...$('domainParents').selectedOptions].map(x=>x.value);const obj={id,name:$('domainName').value.trim(),description:$('domainDescription').value.trim(),parents};if(!obj.name)return;if(db.domains.some(d=>d.id!==id&&d.name.toLocaleLowerCase('fr')===obj.name.toLocaleLowerCase('fr')))throw Error('Ce nom de domaine est déjà utilisé.');try{const proposed={...db,domains:$('domainId').value?db.domains.map(d=>d.id===id?obj:d):[...db.domains,obj]};db=valid(proposed);resetDomain();touch();if(!linkedHtmlHandle)saveHtmlSameFile();writeNotice(linkedHtmlHandle?'Domaine enregistré dans le fichier HTML.':'Domaine modifié. Pour autoriser la sauvegarde, utilisez le bouton Enregistrer dans Administration.')}catch(err){alert(err.message)}};
 $('resetDomain').onclick=resetDomain;
 $('deleteDomain').onclick=()=>{const id=$('domainId').value;if(!id)return;const children=db.domains.filter(d=>d.parents.includes(id));if(children.length){alert('Supprimez d’abord les dépendances de : '+children.map(d=>d.name).join(', '));return}if(!confirm('Supprimer ce domaine et tous ses jalons ?'))return;db.domains=db.domains.filter(d=>d.id!==id);db.milestones=db.milestones.filter(m=>m.domainId!==id);delete db.positions[id];selected=null;resetDomain();touch();if(!linkedHtmlHandle)saveHtmlSameFile()};
 
