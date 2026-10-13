@@ -253,6 +253,35 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 /* Interception des sélections pendant les glissements, y compris le SVG. */
 #mapViewport,#mapViewport *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important}
 #mapViewport svg text{user-select:none!important;-webkit-user-select:none!important;pointer-events:none!important}
+
+/* Domaine(s) affectés et navigation cartographique depuis la réponse métier. */
+.business-row{grid-template-columns:minmax(220px,2.2fr) 78px 120px 145px;align-items:center}
+.business-job-content{min-width:0}
+.business-job-content>strong{display:block}
+.business-domains{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:5px;min-width:0}
+.business-domains-label{font-size:10px;color:#64748b}
+.business-domain-chip{font-size:10px;color:#365778;background:#edf3fa;border:1px solid #dce7f4;border-radius:4px;padding:2px 6px;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.business-domain-disclosure{display:inline-block;position:relative}
+.business-domain-disclosure summary{display:list-item;list-style:none;padding:2px 7px;font-size:10px;font-weight:700;color:#3560a4;border-radius:4px;background:#e7effa;cursor:pointer}
+.business-domain-disclosure summary::-webkit-details-marker{display:none}
+.business-domain-disclosure summary:hover{background:#d7e6fa}
+.business-domain-expanded{display:flex;gap:5px;flex-wrap:wrap;max-height:136px;overflow:auto;padding:8px 0 3px}
+.business-domain-disclosure[open]{flex-basis:100%}
+.business-focus-target{cursor:pointer}
+.business-focus-target:hover{background:#e9f1fc}
+.business-focus-target:focus-visible{outline:2px solid #3560a4;outline-offset:-3px}
+.business-focus-target.business-focus-active{background:#dceafd;box-shadow:inset 3px 0 #3560a4}
+.business-focus-chevron{font-weight:800;font-size:13px;color:#7395b8}
+.business-focus-label{font-size:11px;font-weight:700;color:#203864;max-width:230px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.focus-reset{padding:7px 10px!important;font-size:11px!important}
+#mapViewport .node.focus-primary{opacity:1}
+#mapViewport .node.focus-context{opacity:.92}
+#mapViewport .node.focus-dim{opacity:.17}
+#mapViewport .edge.focus-active{stroke:#087ca0;stroke-width:3.3;opacity:1}
+#mapViewport .edge.focus-dim{opacity:.10}
+@media(max-width:900px){.business-row{grid-template-columns:minmax(190px,1fr) 72px 100px}.business-row .business-details{grid-column:1/-1;text-align:left}}
+@media(max-width:640px){.business-row{grid-template-columns:minmax(0,1fr) 65px}.business-row .business-meter{grid-column:1/-1}.business-domain-chip{max-width:170px}}
+
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
@@ -265,7 +294,7 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
     <div class="toggle" aria-label="Calque affiché"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div>
     <button class="btn secondary" id="fitButton">⊞ Recentrer</button>
     <label class="map-background-control" for="mapBackgroundPicker">Fond <input id="mapBackgroundPicker" type="color" value="#ffffff" title="Choisir la couleur de fond de la cartographie"></label>
-    <button class="btn" id="saveMapLayout" type="button" title="Enregistrer les positions et le fond dans le fichier HTML">Enregistrer la carte</button>
+    <button class="btn" id="saveMapLayout" type="button" title="Enregistrer les positions et le fond dans le fichier HTML">Enregistrer la carte</button><span class="business-focus-label" id="businessFocusLabel" hidden></span><button class="btn secondary" type="button" id="clearBusinessFocus" hidden>✕ Vue métier</button>
   </div>
   <div class="map-time-bar">
     <div class="map-time-caption"><span>Observation</span><strong id="dateLabel"></strong></div>
@@ -354,7 +383,7 @@ const uid=()=>globalThis.crypto?.randomUUID?.()||('id-'+Date.now()+'-'+Math.rand
 const today=()=>new Date().toLocaleDateString('sv-SE');
 let db;try{const embedded=JSON.parse(document.getElementById('data-hub-embedded-state').textContent);db=embedded.bootstrap?sample():valid(embedded)}catch(e){alert('Le contenu embarqué est invalide : '+e.message);db=sample()}
 let dirty=false, fileHandle=null, selected=null, layer='structure',view='map',panX=45,panY=45,zoom=1,drag=null;
-let nodeDrag=null;let date=today();const svgNS='http://www.w3.org/2000/svg';const newSvg=(name,attrs={},parent)=>{let el=document.createElementNS(svgNS,name);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,String(v)));if(parent)parent.appendChild(el);return el};
+let nodeDrag=null;let businessFocus=null;let date=today();const svgNS='http://www.w3.org/2000/svg';const newSvg=(name,attrs={},parent)=>{let el=document.createElementNS(svgNS,name);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,String(v)));if(parent)parent.appendChild(el);return el};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const percent=(id,d=date)=>{const ms=db.milestones.filter(m=>m.domainId===id&&m.date<=d).sort((a,b)=>b.date.localeCompare(a.date));return ms.length?ms[0].value:null};
 const delta=(id,d=date)=>{const prev=db.milestones.filter(m=>m.domainId===id&&m.date<d).sort((a,b)=>b.date.localeCompare(a.date))[0];const cur=percent(id,d);return cur==null?null:cur-(prev?.value??0)};
@@ -598,31 +627,132 @@ $('deleteBusiness').onclick=()=>{
  resetBusiness();touch();
 };
 $('manageBusiness').onclick=()=>{go('admin');openAdminTab('business')};
+
+function getBusinessFocus(){
+ if(!businessFocus)return null;
+ const entries=db.businessResponses||[];
+ const items=businessFocus.kind==='direction'
+  ?entries.filter(x=>x.direction===businessFocus.key)
+  :entries.filter(x=>x.id===businessFocus.key);
+ if(!items.length)return null;
+ const primary=new Set(items.flatMap(x=>x.domainIds).filter(id=>db.domains.some(d=>d.id===id)));
+ if(!primary.size)return null;
+ const byId=new Map(db.domains.map(d=>[d.id,d]));
+ const related=new Set(primary);
+ // Montrer tout le chemin des dépendances en amont ; ne pas étendre aux descendants
+ // non affectés au métier (ils ne font pas partie de son besoin propre).
+ const visit=id=>{
+  const parentIds=byId.get(id)?.parents||[];
+  for(const parent of parentIds)if(!related.has(parent)){related.add(parent);visit(parent)}
+ };
+ [...primary].forEach(visit);
+ const title=businessFocus.kind==='direction'
+  ?businessFocus.key
+  :items[0].direction+' · '+items[0].name;
+ return {title,primary,related,kind:businessFocus.kind,key:businessFocus.key};
+}
+function fitToDomainIds(ids){
+ const d=positions(),points=[...ids].map(id=>d.pos.get(id)).filter(Boolean);
+ if(!points.length)return;
+ const minX=Math.min(...points.map(p=>p.x)),maxX=Math.max(...points.map(p=>p.x+p.w));
+ const minY=Math.min(...points.map(p=>p.y)),maxY=Math.max(...points.map(p=>p.y+p.h));
+ const rect=$('mapSvg').getBoundingClientRect();
+ if(!(rect.width>0&&rect.height>0))return;
+ const unitPixels=Math.min(rect.width/d.width,rect.height/d.height);
+ const offX=(rect.width-d.width*unitPixels)/2,offY=(rect.height-d.height*unitPixels)/2;
+ const margin=48;
+ zoom=Math.max(MIN_ZOOM,Math.min(MAX_ZOOM,
+  (rect.width-2*margin)/(Math.max(1,maxX-minX)*unitPixels),
+  (rect.height-2*margin)/(Math.max(1,maxY-minY)*unitPixels)));
+ panX=(rect.width/2-offX)/unitPixels-((minX+maxX)/2)*zoom;
+ panY=(rect.height/2-offY)/unitPixels-((minY+maxY)/2)*zoom;
+}
+function activateBusinessFocus(kind,key){
+ if(businessFocus?.kind===kind&&businessFocus?.key===key){
+  clearBusinessFocus();return;
+ }
+ businessFocus={kind,key};
+ const focus=getBusinessFocus();
+ if(!focus){businessFocus=null;return}
+ selected=null;renderDetail();
+ // Recadrer sans mutation de positions, ni de JSON ni de sauvegarde.
+ fitToDomainIds(focus.related);
+ renderMap();
+ renderBusinessAnalysis();
+ $('mapPanel').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function clearBusinessFocus(){
+ businessFocus=null;
+ fit();
+ renderMap();
+ renderBusinessAnalysis();
+}
+$('clearBusinessFocus').addEventListener('click',clearBusinessFocus);
 function renderBusinessAnalysis(){
  const el=$('businessAnalysis'),entries=db.businessResponses||[];
+ const focus=getBusinessFocus();
+ if(businessFocus&&!focus)businessFocus=null;
  if(!entries.length){
   el.innerHTML='<div class="business-empty">Aucune réponse métier définie. Utilisez « Gérer les métiers » pour associer des domaines aux directions et métiers.</div>';
   return;
  }
+ const byId=new Map(db.domains.map(d=>[d.id,d]));
  const groups=new Map();
- for(const entry of entries){if(!groups.has(entry.direction))groups.set(entry.direction,[]);groups.get(entry.direction).push(entry)}
+ for(const entry of entries){
+  if(!groups.has(entry.direction))groups.set(entry.direction,[]);
+  groups.get(entry.direction).push(entry);
+ }
  const fmt=n=>n===null?'—':Math.round(n)+' %';
  const bar=n=>n===null?0:Math.max(0,Math.min(100,n));
  const meter=n=>'<span class="business-meter"><span style="width:'+bar(n).toFixed(2)+'%"></span></span>';
+ const displayDomains=entry=>{
+  const names=entry.domainIds.map(id=>byId.get(id)?.name).filter(Boolean);
+  const first=names.slice(0,2);
+  const visible='<span class="business-domains-label">Domaines : </span>'+
+    first.map(name=>'<span class="business-domain-chip" title="'+esc(name)+'">'+esc(name)+'</span>').join('');
+  if(names.length<=2)return '<div class="business-domains">'+visible+'</div>';
+  const additional=names.slice(2);
+  return '<div class="business-domains">'+visible+
+   '<details class="business-domain-disclosure"><summary>+'+additional.length+' domaine'+(additional.length>1?'s':'')+'</summary>'+
+   '<div class="business-domain-expanded">'+additional.map(name=>'<span class="business-domain-chip" title="'+esc(name)+'">'+esc(name)+'</span>').join('')+'</div>'+
+   '</details></div>';
+ };
  el.innerHTML=[...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0],'fr')).map(([direction,items])=>{
   const stats=items.map(entry=>({entry,...businessMaturity(entry)}));
-  // La direction est la moyenne des scores métiers renseignés, sans pondération
-  // implicite par le nombre de domaines. Chaque métier pèse autant.
   const known=stats.filter(x=>x.value!==null);
   const avg=known.length?known.reduce((sum,x)=>sum+x.value,0)/known.length:null;
-  return '<section class="business-direction"><div class="business-direction-header"><div><h3>'+esc(direction)+'</h3><small>'+items.length+' métier(s) · '+known.length+' évalué(s)</small></div>'+
-   '<div class="business-score">'+meter(avg)+'<strong>'+fmt(avg)+'</strong></div></div>'+
-   '<div class="business-rows">'+stats.sort((a,b)=>a.entry.name.localeCompare(b.entry.name,'fr')).map(st=>
-     '<div class="business-row"><strong>'+esc(st.entry.name)+'</strong>'+
-     '<div class="business-score"><strong>'+fmt(st.value)+'</strong></div>'+
-     meter(st.value)+'<span class="business-details">'+st.available+' / '+st.total+' domaines renseignés</span></div>'
-   ).join('')+'</div></section>';
+  const active=focus?.kind==='direction'&&focus.key===direction;
+  const allAssigned=new Set(items.flatMap(x=>x.domainIds));
+  return '<section class="business-direction">'+
+   '<div class="business-direction-header business-focus-target'+(active?' business-focus-active':'')+
+   '" data-focus-direction="'+esc(direction)+'" role="button" tabindex="0" aria-label="Voir les domaines et dépendances de la direction '+esc(direction)+'">'+
+   '<div><h3>'+esc(direction)+'</h3><small>'+items.length+' métier(s) · '+allAssigned.size+' domaine(s) concerné(s)</small></div>'+
+   '<div class="business-score">'+meter(avg)+'<strong>'+fmt(avg)+'</strong><span class="business-focus-chevron" aria-hidden="true">↗</span></div></div>'+
+   '<div class="business-rows">'+stats.sort((a,b)=>a.entry.name.localeCompare(b.entry.name,'fr')).map(st=>{
+    const activeJob=focus?.kind==='job'&&focus.key===st.entry.id;
+    return '<div class="business-row business-focus-target'+(activeJob?' business-focus-active':'')+
+      '" data-focus-job="'+esc(st.entry.id)+'" role="button" tabindex="0" aria-label="Voir les domaines et dépendances du métier '+esc(st.entry.name)+'">'+
+      '<div class="business-job-content"><strong>'+esc(st.entry.name)+'</strong>'+displayDomains(st.entry)+'</div>'+
+      '<div class="business-score"><strong>'+fmt(st.value)+'</strong></div>'+
+      meter(st.value)+
+      '<span class="business-details">'+st.available+' / '+st.total+' renseignés <span class="business-focus-chevron" aria-hidden="true">↗</span></span>'+
+    '</div>';
+   }).join('')+'</div></section>';
  }).join('');
+ for(const element of el.querySelectorAll('[data-focus-direction],[data-focus-job]')){
+  const activate=()=>{
+   if(element.dataset.focusJob)activateBusinessFocus('job',element.dataset.focusJob);
+   else activateBusinessFocus('direction',element.dataset.focusDirection);
+  };
+  element.addEventListener('click',event=>{
+   if(event.target.closest('details,summary'))return;
+   activate();
+  });
+  element.addEventListener('keydown',event=>{
+   if(event.target!==element||!['Enter',' '].includes(event.key))return;
+   event.preventDefault();activate();
+  });
+ }
 }
 
 function renderDetail(){let o=db.domains.find(x=>x.id===selected);if(!o){$('detail').innerHTML='<div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div>';return}let m=db.milestones.filter(x=>x.domainId===o.id).sort((a,b)=>a.date.localeCompare(b.date));let value=percent(o.id);$('detail').innerHTML='<div class="detail-head"><div><h2>'+esc(o.name)+'</h2><p>'+esc(o.description||'Aucune description renseignée')+'</p></div><button class="btn secondary" id="editSelected">Administrer ce domaine</button></div><div class="details-grid"><div><div class="big-percent">'+(value===null?'—':value+' %')+'</div><small>Couverture au '+esc(date)+'</small><p class="muted">'+esc(o.parents.map(id=>db.domains.find(x=>x.id===id)?.name||id).join(' · ')||'Domaine autonome')+'</p></div><div><b>Trajectoire de couverture</b><div class="mini-timeline" style="margin-top:10px">'+(m.length?m.map(x=>'<span><b>'+x.value+' %</b><small>'+esc(x.date)+(x.date>today()?' · prévu':'')+'</small>'+esc(x.note)+'</span>').join(''):'<span>Aucun jalon de couverture enregistré.</span>')+'</div></div></div>';$('editSelected').onclick=()=>{go('admin');openAdminTab('domains');editDomain(o.id)}}
