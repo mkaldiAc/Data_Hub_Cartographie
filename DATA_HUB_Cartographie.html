@@ -447,7 +447,7 @@ const currentHtmlLocation=location.protocol==='file:'?decodeURIComponent(locatio
 const originalEmbedded=JSON.parse(standaloneStateElement.textContent);
 let currentRevision=originalEmbedded.revision||'seed', linkedHtmlHandle=null;
 let savedHtmlName=currentHtmlLocation||'DATA_HUB_Cartographie.html';
-let persistedState=structuredClone(db),editSerial=0,saveInProgress=false,autoSaveTimer=null;
+let persistedState=structuredClone(db),editSerial=0,saveInProgress=false,autoSaveTimer=null,saveInFlight=null;
 const oldStatusFunction=status;
 status=function(){
   oldStatusFunction();
@@ -551,8 +551,20 @@ function queueHtmlAutoSave(){
   autoSaveTimer=setTimeout(()=>saveHtmlSameFile({automatic:true}),600);
 }
 async function saveHtmlSameFile(options={}){
+  if(saveInFlight){
+    await saveInFlight;
+    if(!dirty)return;
+  }
+  const operation=performHtmlSave(options);
+  saveInFlight=operation;
+  try{await operation}
+  finally{
+    if(saveInFlight===operation)saveInFlight=null;
+    if(dirty&&linkedHtmlHandle)queueHtmlAutoSave();
+  }
+}
+async function performHtmlSave(options={}){
   const automatic=options?.automatic===true;
-  if(saveInProgress){if(automatic)queueHtmlAutoSave();return}
   if(!linkedHtmlHandle&&!window.showOpenFilePicker){
     writeNotice('Écriture directe indisponible. Utilisez Enregistrer une copie.');
     if(!automatic)alert('Chrome ne permet pas de sélectionner un fichier HTML en écriture ici.');
