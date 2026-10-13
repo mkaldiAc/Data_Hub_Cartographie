@@ -57,13 +57,18 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 /* Teintes exclusivement bleues et cartouches lisibles. */
 .node .pct-bg{fill:#eaf1fb}.node .pct-bar{fill:#3560a4}.node rect:first-child{filter:none!important}.node .percent{font-weight:700}.node .bracket{display:none!important}
 .coverage-table .domain-column{max-width:380px;overflow-wrap:anywhere}
+
+.map-placement-notice{margin:-2px 0 10px;padding:9px 14px;border:1px solid #d5e2f0;border-radius:6px;color:#29467b;background:#edf4fc;font-size:12px}
+#saveMapLayout{white-space:nowrap}
+.coverage-table th.date-found{background:#3b7cbb!important;box-shadow:inset 0 0 0 3px #8faadc!important;transition:background .25s,box-shadow .25s}
+
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
 <main><header class="top"><div><span class="overline">PILOTAGE DE L'ENTREPÔT DE DONNÉES</span><h1 id="pageTitle">Cartographie des domaines</h1><p id="pageDesc">Une vision partagée de la cible, du réalisé et de la trajectoire.</p></div><div class="actions admin-actions" id="adminActions" hidden><button class="btn secondary" id="saveHtmlCopy">Enregistrer une copie</button><span id="storageStatus" class="storage-status">● Mode local</span><button class="btn secondary" id="exportButton">Exporter JSON</button></div></header>
 <section id="mapPage"><div class="kpis"><article><small>DOMAINES CIBLES</small><strong id="totalDomains">—</strong><span>pools identifiés</span></article><article><small>COUVERTURE MOYENNE</small><strong id="avgCoverage">—</strong><span>sur les domaines suivis</span></article><article><small>DOMAINES ≥ 80 %</small><strong id="matureDomains">—</strong><span>sur la date choisie</span></article><article><small>POINTS DE SUIVI</small><strong id="totalMilestones">—</strong><span>jalons renseignés</span></article></div>
-<div class="panel toolbar"><div class="toolrow"><div class="toggle"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div><label class="search">⌕ <input id="filter" placeholder="Rechercher un domaine…"></label><label>Focus <select id="groupFilter"><option value="">Tous les domaines</option></select></label><button class="btn secondary" id="fitButton">⊞ Recentrer</button></div><div class="timeline"><div><label for="dateRange">Date d'observation <strong id="dateLabel"></strong></label><input type="range" id="dateRange" min="0" max="0" value="0"></div><div class="date-controls"><input type="date" id="dateInput"><button id="todayButton" class="btn secondary">Aujourd'hui</button></div></div></div>
-<div class="panel map-panel"><div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small><small class="map-subtitle">Vue verticale · ramifications métier · placement personnalisable</small></div><div class="zoom"><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div><div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glissez un pool pour le repositionner · Glissez le fond pour naviguer</div></div><div class="legend" id="legend"></div></div>
+<div class="panel toolbar"><div class="toolrow"><div class="toggle"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div><label class="search">⌕ <input id="filter" placeholder="Rechercher un domaine…"></label><label>Focus <select id="groupFilter"><option value="">Tous les domaines</option></select></label><button class="btn secondary" id="fitButton">⊞ Recentrer</button><button class="btn" id="saveMapLayout" type="button" title="Enregistrer les coordonnées des pools dans le fichier HTML">Enregistrer le placement</button></div><div class="timeline"><div><label for="dateRange">Date d'observation <strong id="dateLabel"></strong></label><input type="range" id="dateRange" min="0" max="0" value="0"></div><div class="date-controls"><input type="date" id="dateInput"><button id="todayButton" class="btn secondary">Aujourd'hui</button></div></div></div>
+<div class="map-placement-notice" role="status" id="mapPlacementMessage">Déplacez librement les pools puis cliquez sur « Enregistrer le placement ».</div><div class="panel map-panel"><div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small><small class="map-subtitle">Vue verticale · ramifications métier · placement personnalisable</small></div><div class="zoom"><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div><div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glissez un pool pour le repositionner · Glissez le fond pour naviguer</div></div><div class="legend" id="legend"></div></div>
 <div class="detail panel" id="detail"><div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div></div>
 </section>
 <section id="adminPage" hidden><div class="admin-tabs" role="tablist" aria-label="Administration"><button class="active" role="tab" aria-selected="true" aria-controls="coverageAdmin" data-admin-tab="coverage">Couverture des données</button><button role="tab" aria-selected="false" aria-controls="domainAdmin" data-admin-tab="domains">Domaines & dépendances</button></div><div id="domainAdmin" role="tabpanel" hidden><div class="two-col"><div class="panel admin-panel"><h2>Domaines de données</h2><p class="muted">Ajoutez un domaine indépendant ou reliez-le à plusieurs domaines existants.</p><form id="domainForm"><input type="hidden" id="domainId"><label>Nom du domaine <input id="domainName" required maxlength="90" placeholder="Ex. Maintenance patrimoniale"></label><label>Description <textarea id="domainDescription" rows="2" placeholder="Périmètre du pool de données"></textarea></label><label>Dépendances (plusieurs choix possibles)<select multiple id="domainParents" size="7"></select><small>Ctrl + clic pour sélectionner plusieurs parents. Laissez vide pour un domaine autonome.</small></label><div class="form-actions"><button class="btn" type="submit">Enregistrer le domaine</button><button class="btn secondary" type="button" id="resetDomain">Nouveau</button><button class="btn danger" type="button" id="deleteDomain" hidden>Supprimer</button></div></form></div></div><div class="panel admin-panel"><div class="admin-help"><b>Disposition de la carte</b><p>Les pools peuvent être déplacés directement sur la cartographie. Leur placement est conservé dans le fichier HTML lors de l’enregistrement.</p><button id="resetPositions" type="button" class="btn secondary">Réinitialiser le placement</button></div></div><div class="panel admin-panel"><h2>Référentiel des domaines</h2><div id="domainTable"></div></div></div><div id="coverageAdmin" role="tabpanel"><div class="panel admin-panel"><div class="coverage-head"><div><h2>Matrice de couverture</h2><p class="muted">Chaque ligne correspond à un domaine et chaque colonne à une date de constat. Une cellule vide signifie « non renseigné ».</p></div><div class="form-actions"><label>Nouvelle date <input id="newStatementDate" type="date"></label><button class="btn" id="addStatementDate" type="button">Ajouter une date</button></div></div><div class="coverage-table-wrap"><table id="coverageMatrix" class="coverage-table"></table></div><div class="coverage-actions"><span id="matrixStatus" role="status" class="muted"></span><button class="btn" id="saveCoverageMatrix">Enregistrer les couvertures</button></div></div></div></section>
@@ -121,7 +126,8 @@ const percent=(id,d=date)=>{const ms=db.milestones.filter(m=>m.domainId===id&&m.
 const delta=(id,d=date)=>{const prev=db.milestones.filter(m=>m.domainId===id&&m.date<d).sort((a,b)=>b.date.localeCompare(a.date))[0];const cur=percent(id,d);return cur==null?null:cur-(prev?.value??0)};
 const color=v=>{if(v===null)return '#fff';const t=Math.max(0,Math.min(100,v))/100,a=[234,241,251],b=[32,56,100];return '#'+a.map((n,i)=>Math.round(n+(b[i]-n)*t).toString(16).padStart(2,'0')).join('')};
 const dates=()=>Array.from(new Set([today(),date,...db.milestones.map(m=>m.date)])).sort();
-function touch(){db.updatedAt=new Date().toISOString();dirty=true;editSerial++;status();render();queueHtmlAutoSave()}
+const matrixDrafts=new Map();let layoutPending=false;
+function touch({autoSave=true}={}){db.updatedAt=new Date().toISOString();dirty=true;editSerial++;status();render();if(autoSave)queueHtmlAutoSave()}
 function status(){$('storageStatus').textContent=(fileHandle?'● Dossier lié':'● Mode local')+(dirty?' · modifications à enregistrer':'');$('storageInfo').textContent=fileHandle?'Fichier lié : '+fileHandle.name+(dirty?' — modifications non enregistrées dans le dossier.':' — enregistré.'):'Aucun fichier Teams lié. Les modifications sont conservées uniquement dans ce navigateur. Exportez-les ou liez un fichier JSON.'}
 function go(next){view=next;for(const v of ['map','admin','storage']){$(v+'Page').hidden=v!==next;document.querySelector('[data-view="'+v+'"]')?.classList.toggle('active',v===next)}$('pageTitle').textContent=({map:'Cartographie des domaines',admin:'Administration du référentiel',storage:'Partage et stockage'})[next];$('pageDesc').textContent=({map:'Une vision partagée de la cible, du réalisé et de la trajectoire.',admin:'Gérer les domaines, leurs dépendances et les objectifs dans le temps.',storage:'Connecter un fichier JSON hébergé dans votre dossier Teams synchronisé.'})[next];$('adminActions').hidden=next!=='admin';if(next==='map')renderMap()}
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>go(b.dataset.view));
@@ -139,7 +145,7 @@ document.querySelectorAll('[data-admin-tab]').forEach(b=>b.addEventListener('cli
 openAdminTab('coverage');
 $('resetPositions').addEventListener('click',()=>{
   if(!confirm('Réinitialiser la disposition de tous les pools ?'))return;
-  db.positions={};touch();if(!linkedHtmlHandle)saveHtmlSameFile();
+  db.positions={};layoutPending=true;touch({autoSave:false});if(!linkedHtmlHandle)saveHtmlSameFile();else queueHtmlAutoSave();
 });
 
 function options(select,empty=false,exclude=''){select.innerHTML=(empty?'<option value="">Tous les domaines</option>':'')+db.domains.filter(d=>d.id!==exclude).map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name)+'</option>').join('')}
@@ -273,26 +279,40 @@ $('deleteDomain').onclick=()=>{const id=$('domainId').value;if(!id)return;const 
 function statementDays(){return [...new Set([...(db.statementDates||[]),...db.milestones.map(m=>m.date)])].sort()}
 function renderCoverageMatrix(){
  const ds=statementDays(),t=$('coverageMatrix');if(!t)return;
- let html='<thead><tr><th class="domain-column">Domaine</th>'+ds.map(d=>'<th><div class="date-cell">'+d.split('-').reverse().join('/')+' <button class="remove-date" data-day="'+d+'" title="Supprimer la date et ses valeurs">×</button></div></th>').join('')+'</tr></thead><tbody>';
+ let html='<thead><tr><th class="domain-column">Domaine</th>'+ds.map(d=>'<th data-statement-header="'+d+'"><div class="date-cell">'+d.split('-').reverse().join('/')+' <button class="remove-date" data-day="'+d+'" title="Supprimer la date et ses valeurs">×</button></div></th>').join('')+'</tr></thead><tbody>';
  for(const domain of db.domains){
   html+='<tr><th scope="row" class="domain-column">'+esc(domain.name)+'</th>';
-  for(const d of ds){const v=db.milestones.find(m=>m.domainId===domain.id&&m.date===d)?.value;html+='<td><input type="number" class="matrix-value" min="0" max="100" step="1" data-domain="'+domain.id+'" data-day="'+d+'" aria-label="'+esc(domain.name)+' '+d+'" value="'+(v??'')+'" placeholder="—"> %</td>'}
+  for(const d of ds){const saved=db.milestones.find(m=>m.domainId===domain.id&&m.date===d)?.value;const v=matrixDrafts.has(domain.id+'|'+d)?matrixDrafts.get(domain.id+'|'+d):saved;html+='<td><input type="number" class="matrix-value" min="0" max="100" step="1" data-domain="'+domain.id+'" data-day="'+d+'" aria-label="'+esc(domain.name)+' '+d+'" value="'+(v??'')+'" placeholder="—"> %</td>'}
   html+='</tr>';
  }
  t.innerHTML=html+'</tbody>';
- t.querySelectorAll('input').forEach(el=>el.oninput=()=>{$('matrixStatus').textContent='Modifications à enregistrer'});
- t.querySelectorAll('.remove-date').forEach(b=>b.onclick=()=>{const d=b.dataset.day;if(!confirm('Supprimer la date '+d+' et tous les constats associés ?'))return;db.statementDates=(db.statementDates||[]).filter(x=>x!==d);db.milestones=db.milestones.filter(m=>m.date!==d);touch();if(!linkedHtmlHandle)saveHtmlSameFile()});
+ t.querySelectorAll('input').forEach(el=>el.oninput=()=>{const key=el.dataset.domain+'|'+el.dataset.day,m=db.milestones.find(m=>m.domainId===el.dataset.domain&&m.date===el.dataset.day);if(el.value===(m?.value==null?'':String(m.value)))matrixDrafts.delete(key);else matrixDrafts.set(key,el.value);$('matrixStatus').textContent=matrixDrafts.size+' cellule(s) modifiée(s), à enregistrer';});
+ t.querySelectorAll('.remove-date').forEach(b=>b.onclick=()=>{const d=b.dataset.day;if(!confirm('Supprimer la date '+d+' et tous les constats associés ?'))return;db.statementDates=(db.statementDates||[]).filter(x=>x!==d);db.milestones=db.milestones.filter(m=>m.date!==d);for(const k of matrixDrafts.keys())if(k.endsWith('|'+d))matrixDrafts.delete(k);touch();if(!linkedHtmlHandle)saveHtmlSameFile()});
 }
 $('addStatementDate').onclick=()=>{
- const d=$('newStatementDate').value;if(!d){alert('Sélectionnez une date');return}if(statementDays().includes(d)){alert('Cette date existe déjà');return}
- db.statementDates=[...statementDays(),d].sort();touch();if(!linkedHtmlHandle)saveHtmlSameFile();
+ const d=$('newStatementDate').value;
+ if(!d){$('matrixStatus').textContent='Sélectionnez une date dans le calendrier.';return}
+ if(statementDays().includes(d)){
+   // Pas une erreur : la colonne est déjà dans le tableau, y compris si toutes les cellules sont vides.
+   const column=$('coverageMatrix').querySelector('[data-statement-header="'+d+'"]');
+   if(column){column.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});column.classList.add('date-found');setTimeout(()=>column.classList.remove('date-found'),1800)}
+   $('matrixStatus').textContent='La date du '+d.split('-').reverse().join('/')+' est déjà présente : sa colonne a été mise en évidence. Vous pouvez directement saisir les taux.';
+   return;
+ }
+ db.statementDates=[...statementDays(),d].sort();
+ touch();
+ $('newStatementDate').value='';
+ const column=$('coverageMatrix').querySelector('[data-statement-header="'+d+'"]');
+ if(column){column.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});column.classList.add('date-found');setTimeout(()=>column.classList.remove('date-found'),1800)}
+ $('matrixStatus').textContent='Date du '+d.split('-').reverse().join('/')+' ajoutée. Saisissez maintenant les taux dans la nouvelle colonne.';
+ if(!linkedHtmlHandle)saveHtmlSameFile();
 };
 $('saveCoverageMatrix').onclick=()=>{
  const inputs=[...document.querySelectorAll('.matrix-value')];
  if(inputs.some(x=>x.value!==''&&(!Number.isInteger(Number(x.value))||Number(x.value)<0||Number(x.value)>100))){alert('Saisir des pourcentages entiers de 0 à 100');return}
  const out=new Map(db.milestones.map(m=>[m.domainId+'|'+m.date,m]));
  for(const inp of inputs){const key=inp.dataset.domain+'|'+inp.dataset.day,prev=out.get(key);if(inp.value===''){out.delete(key)}else{out.set(key,{id:prev?.id||uid(),domainId:inp.dataset.domain,date:inp.dataset.day,value:Number(inp.value),note:prev?.note||''})}}
- db.milestones=[...out.values()];db.statementDates=[...new Set([...(db.statementDates||[]),...db.milestones.map(m=>m.date)])].sort();touch();$('matrixStatus').textContent='Constats validés';if(!linkedHtmlHandle)saveHtmlSameFile();
+ db.milestones=[...out.values()];db.statementDates=[...new Set([...(db.statementDates||[]),...db.milestones.map(m=>m.date)])].sort();matrixDrafts.clear();touch();$('matrixStatus').textContent='Constats validés. '+(linkedHtmlHandle?'Écriture dans le fichier HTML en cours…':'Veuillez autoriser l’écriture dans le fichier HTML.');if(!linkedHtmlHandle)saveHtmlSameFile();
 };
 $('filter').oninput=e=>{filter=e.target.value.toLowerCase().trim();renderMap()};
 $('groupFilter').onchange=e=>{focus=e.target.value;renderMap()};
@@ -304,7 +324,8 @@ function fit(){zoom=1;panX=12;panY=12;renderMap()}$('fitButton').onclick=fit;
 $('zoomIn').onclick=()=>{zoom=Math.min(2.8,zoom*1.2);renderMap()};
 $('zoomOut').onclick=()=>{zoom=Math.max(.35,zoom/1.2);renderMap()};
 const viewport=$('mapViewport');viewport.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(2.8,Math.max(.35,zoom*(e.deltaY<0?1.12:.89)));renderMap()},{passive:false});
-viewport.addEventListener('pointerdown',e=>{if(e.target.closest('.node'))return;drag={x:e.clientX,y:e.clientY,px:panX,py:panY};viewport.setPointerCapture(e.pointerId)});viewport.addEventListener('pointermove',e=>{if(nodeDrag){const dx=(e.clientX-nodeDrag.startX)*nodeDrag.scaleX,dy=(e.clientY-nodeDrag.startY)*nodeDrag.scaleY;if(Math.abs(dx)>4||Math.abs(dy)>4)nodeDrag.moved=true;if(nodeDrag.moved){db.positions[nodeDrag.id]={x:Math.round(Math.max(10,nodeDrag.x+dx)),y:Math.round(Math.max(10,nodeDrag.y+dy))};renderMap()}return}if(!drag)return;const rect=viewport.getBoundingClientRect(),logical=$('mapSvg').viewBox.baseVal;panX=drag.px+(e.clientX-drag.x)*logical.width/rect.width;panY=drag.py+(e.clientY-drag.y)*logical.height/rect.height;renderMap()});viewport.addEventListener('pointerup',()=>{drag=null;if(nodeDrag){const n=nodeDrag;nodeDrag=null;if(n.moved){touch();if(!linkedHtmlHandle)saveHtmlSameFile()}else{selected=n.id;renderMap();renderDetail()}}});viewport.addEventListener('pointercancel',()=>{nodeDrag=null;drag=null;renderMap()});
+viewport.addEventListener('pointerdown',e=>{if(e.target.closest('.node'))return;drag={x:e.clientX,y:e.clientY,px:panX,py:panY};viewport.setPointerCapture(e.pointerId)});viewport.addEventListener('pointermove',e=>{if(nodeDrag){const dx=(e.clientX-nodeDrag.startX)*nodeDrag.scaleX,dy=(e.clientY-nodeDrag.startY)*nodeDrag.scaleY;if(Math.abs(dx)>4||Math.abs(dy)>4)nodeDrag.moved=true;if(nodeDrag.moved){db.positions[nodeDrag.id]={x:Math.round(Math.max(10,nodeDrag.x+dx)),y:Math.round(Math.max(10,nodeDrag.y+dy))};renderMap()}return}if(!drag)return;const rect=viewport.getBoundingClientRect(),logical=$('mapSvg').viewBox.baseVal;panX=drag.px+(e.clientX-drag.x)*logical.width/rect.width;panY=drag.py+(e.clientY-drag.y)*logical.height/rect.height;renderMap()});viewport.addEventListener('pointerup',()=>{drag=null;if(nodeDrag){const n=nodeDrag;nodeDrag=null;if(n.moved){layoutPending=true;touch({autoSave:false});}else{selected=n.id;renderMap();renderDetail()}}});
+$('saveMapLayout').addEventListener('click',async()=>{if(nodeDrag)return;await saveHtmlSameFile();});viewport.addEventListener('pointercancel',()=>{nodeDrag=null;drag=null;renderMap()});
 function download(){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.href=url;a.download='data-hub-cartographie.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 $('exportButton').onclick=download;
 const supported=()=>!!window.showOpenFilePicker&&!!window.showSaveFilePicker;
@@ -332,6 +353,10 @@ status=function(){
   const label=document.getElementById('storageStatus');
   label.textContent=(dirty?(linkedHtmlHandle?'● Sauvegarde en attente…':'● À enregistrer : cliquez « Enregistrer »'):'● Document à jour')+' · '+savedHtmlName;
   label.style.color=dirty?'#a85c00':'#137a55';
+  const placement=$('mapPlacementMessage');
+  if(placement)placement.textContent=layoutPending
+    ? 'Placement modifié : cliquez sur « Enregistrer le placement » pour conserver la disposition.'
+    : 'Déplacez les cartouches puis cliquez sur « Enregistrer le placement » pour conserver leur disposition.';
 };
 const writeNotice=message=>{document.getElementById('htmlSaveMessage').textContent=message};
 function extractHtmlPayload(source){
@@ -463,7 +488,7 @@ async function saveHtmlSameFile(options={}){
     await writeToFile(linkedHtmlHandle,serializeHtmlDocument(nextRevision,proposed));
     currentRevision=nextRevision;
     persistedState=structuredClone(proposed);
-    if(serial===editSerial){db=proposed;dirty=false}
+    if(serial===editSerial){db=proposed;dirty=false;layoutPending=false}
     else{db=mergeThreeWay(local,db,proposed);dirty=true;queueHtmlAutoSave()}
     render();
     writeNotice((diverged?'Versions fusionnées sans conflit. ':'')+'Enregistrement confirmé dans « '+savedHtmlName+' ».');
@@ -501,7 +526,7 @@ async function saveHtmlCopy(){
 
 document.getElementById('saveHtmlCopy').addEventListener('click',saveHtmlCopy);
 window.addEventListener('beforeunload',event=>{
-  if(dirty){event.preventDefault();event.returnValue=''}
+  if(dirty||matrixDrafts.size>0){event.preventDefault();event.returnValue=''}
 });
 window.__dataHubTemplate = '<!DOCTYPE html>\\n' + document.documentElement.outerHTML;
 status();
