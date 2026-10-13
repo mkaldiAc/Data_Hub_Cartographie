@@ -151,3 +151,13 @@ Un test interactif dans le navigateur Chrome de l'utilisateur reste requis pour 
 - Audit par simulation DOM : 35 domaines affichés dans les indicateurs au démarrage, date d'observation initialisée, ajout d'une date produisant 35 champs dans la matrice ; compilation JavaScript vérifiée. Les permissions et l'écriture réelles nécessitent toujours un essai dans Chrome.
 
 Attention : téléchargez le nouveau HTML depuis GitHub. Gardez une copie de l'ancien fichier si vous y avez stocké des données, car le dépôt GitHub et la copie locale ne synchronisent pas leurs données automatiquement.
+
+## Interface cartographie compacte et frise chronologique proportionnelle (13 octobre 2026)
+
+- La barre de commandes et la navigation temporelle se trouvent désormais **dans le panneau cartographie**, au-dessus du graphe, y compris en plein écran. L'ancien bandeau séparé est supprimé pour libérer de la hauteur.
+- Les dates de la frise proviennent de toutes les dates de constat du référentiel (`statementDates`) et des dates des jalons (`milestones`), sans devoir posséder une valeur de couverture à chaque date.
+- Les positions des points sont calculées sur la base de la différence **réelle en jours** depuis le premier constat, divisée par la durée totale. La distance entre deux repères n'est donc pas artificiellement régulière. Les repères sont cliquables ; le glissement sélectionne le constat le plus proche. Les dates prospectives sont distinguées par un contour en tirets.
+- Avec une seule date, le curseur reste sur cette date ; sans date, il présente un état neutre indiquant qu'aucun constat n'est enregistré.
+- Test logique : 14/10/2026, 14/11/2026 et 14/11/2027 → second repère à **7,8 %** de l'axe ; les 35 domaines sont préservés et le JavaScript est compilable.
+
+Le test final des interactions graphiques dans Chrome est à réaliser sur le fichier autonome téléchargé depuis ce dépôt.
