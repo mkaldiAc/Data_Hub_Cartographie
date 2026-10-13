@@ -62,13 +62,32 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 #saveMapLayout{white-space:nowrap}
 .coverage-table th.date-found{background:#3b7cbb!important;box-shadow:inset 0 0 0 3px #8faadc!important;transition:background .25s,box-shadow .25s}
 
+
+/* Cartographie lisible : cartes plus grandes, plein écran réel / secours sans serveur. */
+#mapPanel{min-width:0}
+#mapPanel:fullscreen,#mapPanel.fullscreen-fallback{
+ display:flex!important;flex-direction:column!important;width:100vw!important;height:100vh!important;
+ max-width:none!important;max-height:none!important;border-radius:0!important;margin:0!important;
+ border:none!important;background:white!important;z-index:9999
+}
+#mapPanel:fullscreen #mapViewport,#mapPanel.fullscreen-fallback #mapViewport{
+ flex:1 1 auto!important;height:auto!important;min-height:0!important
+}
+#mapPanel.fullscreen-fallback{position:fixed!important;inset:0!important}
+#mapPanel:fullscreen .map-heading,#mapPanel.fullscreen-fallback .map-heading{flex:none!important}
+#mapPanel:fullscreen .legend,#mapPanel.fullscreen-fallback .legend{flex:none!important}
+#mapFullscreen{width:auto!important;padding:6px 12px!important;font-size:13px!important;line-height:1.4!important;white-space:nowrap}
+.node text{font-size:19px!important;letter-spacing:-.2px;font-weight:700}
+.node .percent{font-size:14px!important}
+.node rect:first-child{stroke-width:1.5px}
+
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
 <main><header class="top"><div><span class="overline">PILOTAGE DE L'ENTREPÔT DE DONNÉES</span><h1 id="pageTitle">Cartographie des domaines</h1><p id="pageDesc">Une vision partagée de la cible, du réalisé et de la trajectoire.</p></div><div class="actions admin-actions" id="adminActions" hidden><button class="btn secondary" id="saveHtmlCopy">Enregistrer une copie</button><span id="storageStatus" class="storage-status">● Mode local</span><button class="btn secondary" id="exportButton">Exporter JSON</button></div></header>
 <section id="mapPage"><div class="kpis"><article><small>DOMAINES CIBLES</small><strong id="totalDomains">—</strong><span>pools identifiés</span></article><article><small>COUVERTURE MOYENNE</small><strong id="avgCoverage">—</strong><span>sur les domaines suivis</span></article><article><small>DOMAINES ≥ 80 %</small><strong id="matureDomains">—</strong><span>sur la date choisie</span></article><article><small>POINTS DE SUIVI</small><strong id="totalMilestones">—</strong><span>jalons renseignés</span></article></div>
 <div class="panel toolbar"><div class="toolrow"><div class="toggle"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div><label class="search">⌕ <input id="filter" placeholder="Rechercher un domaine…"></label><label>Focus <select id="groupFilter"><option value="">Tous les domaines</option></select></label><button class="btn secondary" id="fitButton">⊞ Recentrer</button><button class="btn" id="saveMapLayout" type="button" title="Enregistrer les coordonnées des pools dans le fichier HTML">Enregistrer le placement</button></div><div class="timeline"><div><label for="dateRange">Date d'observation <strong id="dateLabel"></strong></label><input type="range" id="dateRange" min="0" max="0" value="0"></div><div class="date-controls"><input type="date" id="dateInput"><button id="todayButton" class="btn secondary">Aujourd'hui</button></div></div></div>
-<div class="map-placement-notice" role="status" id="mapPlacementMessage">Déplacez librement les pools puis cliquez sur « Enregistrer le placement ».</div><div class="panel map-panel"><div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small><small class="map-subtitle">Vue verticale · ramifications métier · placement personnalisable</small></div><div class="zoom"><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div><div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glissez un pool pour le repositionner · Glissez le fond pour naviguer</div></div><div class="legend" id="legend"></div></div>
+<div class="map-placement-notice" role="status" id="mapPlacementMessage">Déplacez librement les pools puis cliquez sur « Enregistrer le placement ».</div><div class="panel map-panel" id="mapPanel"><div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small><small class="map-subtitle">Vue verticale · ramifications métier · placement personnalisable</small></div><div class="zoom"><button id="mapFullscreen" title="Afficher la cartographie en plein écran" type="button">⛶ Plein écran</button><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div><div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glissez un pool pour le repositionner · Glissez le fond pour naviguer</div></div><div class="legend" id="legend"></div></div>
 <div class="detail panel" id="detail"><div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div></div>
 </section>
 <section id="adminPage" hidden><div class="admin-tabs" role="tablist" aria-label="Administration"><button class="active" role="tab" aria-selected="true" aria-controls="coverageAdmin" data-admin-tab="coverage">Couverture des données</button><button role="tab" aria-selected="false" aria-controls="domainAdmin" data-admin-tab="domains">Domaines & dépendances</button></div><div id="domainAdmin" role="tabpanel" hidden><div class="two-col"><div class="panel admin-panel"><h2>Domaines de données</h2><p class="muted">Ajoutez un domaine indépendant ou reliez-le à plusieurs domaines existants.</p><form id="domainForm"><input type="hidden" id="domainId"><label>Nom du domaine <input id="domainName" required maxlength="90" placeholder="Ex. Maintenance patrimoniale"></label><label>Description <textarea id="domainDescription" rows="2" placeholder="Périmètre du pool de données"></textarea></label><label>Dépendances (plusieurs choix possibles)<select multiple id="domainParents" size="7"></select><small>Ctrl + clic pour sélectionner plusieurs parents. Laissez vide pour un domaine autonome.</small></label><div class="form-actions"><button class="btn" type="submit">Enregistrer le domaine</button><button class="btn secondary" type="button" id="resetDomain">Nouveau</button><button class="btn danger" type="button" id="deleteDomain" hidden>Supprimer</button></div></form></div></div><div class="panel admin-panel"><div class="admin-help"><b>Disposition de la carte</b><p>Les pools peuvent être déplacés directement sur la cartographie. Leur placement est conservé dans le fichier HTML lors de l’enregistrement.</p><button id="resetPositions" type="button" class="btn secondary">Réinitialiser le placement</button></div></div><div class="panel admin-panel"><h2>Référentiel des domaines</h2><div id="domainTable"></div></div></div><div id="coverageAdmin" role="tabpanel"><div class="panel admin-panel"><div class="coverage-head"><div><h2>Matrice de couverture</h2><p class="muted">Chaque ligne correspond à un domaine et chaque colonne à une date de constat. Une cellule vide signifie « non renseigné ».</p></div><div class="form-actions"><label>Nouvelle date <input id="newStatementDate" type="date"></label><button class="btn" id="addStatementDate" type="button">Ajouter une date</button></div></div><div class="coverage-table-wrap"><table id="coverageMatrix" class="coverage-table"></table></div><div class="coverage-actions"><span id="matrixStatus" role="status" class="muted"></span><button class="btn" id="saveCoverageMatrix">Enregistrer les couvertures</button></div></div></div></section>
@@ -200,22 +219,22 @@ function positions(){
     const ref=initial.get(o.name);
     const fallback=ref?[ref.x,ref.y]:[300+(i%6)*columnSize,1200+Math.floor(i/6)*rowSize];
     const p=current[o.id]||{x:fallback[0],y:fallback[1]};
-    pos.set(o.id,{x:p.x,y:p.y,w:198,h:66});
+    pos.set(o.id,{x:p.x,y:p.y,w:228,h:86});
   }
   return {pos,width:Math.max(width,...[...pos.values()].map(p=>p.x+p.w+85)),height:Math.max(height,...[...pos.values()].map(p=>p.y+p.h+100))};
 }
 function drawText(g,name,v=null){
   const words=name.split(/\s+/),lines=[];
   let line='';
-  const limit=v===null?24:20;
+  const limit=v===null?23:20;
   for(const word of words){
     if((line+' '+word).trim().length>limit&&line){lines.push(line);line=word}
     else line=(line+' '+word).trim();
   }
   if(line)lines.push(line);
   if(lines.length>3)lines.splice(2,lines.length-2,lines.slice(2).join(' ').slice(0,23)+'…');
-  const start=lines.length===1?36:lines.length===2?27:20;
-  lines.forEach((part,i)=>{const e=newSvg('text',{x:99,y:start+i*16,'text-anchor':'middle'},g);e.textContent=part});
+  const start=lines.length===1?48:lines.length===2?37:24;
+  lines.forEach((part,i)=>{const e=newSvg('text',{x:114,y:start+i*23,'text-anchor':'middle'},g);e.textContent=part});
 }
 function linkCurve(a,b){
   const ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2;
@@ -250,12 +269,12 @@ function renderMap(){
     const g=newSvg('g',{class:'node'+(obj.id===selected?' selected':'')+(dim?' dim':''),
       transform:'translate('+p.x+' '+p.y+')',tabindex:0,role:'button',
       'aria-label':obj.name},outer);
-    newSvg('rect',{width:p.w,height:p.h,rx:8,style:'fill:'+(layer==='coverage'?color(percent(obj.id)):'#fff')+';stroke:#b9cbdc'},g);
+    newSvg('rect',{width:p.w,height:p.h,rx:10,style:'fill:'+(layer==='coverage'?color(percent(obj.id)):'#fff')+';stroke:#b9cbdc'},g);
     
     if(layer!=='structure'){
-      newSvg('rect',{x:0,y:p.h-7,width:p.w,height:7,rx:3,fill:'#ecf0f4',stroke:'none'},g);
-      newSvg('rect',{x:0,y:p.h-7,width:p.w*(Math.abs(val||0)/100),height:7,rx:3,fill:color(val),stroke:'none'},g);
-      const pc=newSvg('text',{class:'percent',x:181,y:17,'text-anchor':'end',style:'fill:'+color(val)},g);
+      newSvg('rect',{x:0,y:p.h-6,width:p.w,height:6,rx:3,fill:'#ecf0f4',stroke:'none'},g);
+      newSvg('rect',{x:0,y:p.h-6,width:p.w*(Math.abs(val||0)/100),height:6,rx:3,fill:color(val),stroke:'none'},g);
+      const pc=newSvg('text',{class:'percent',x:211,y:19,'text-anchor':'end',style:'fill:'+color(val)},g);
       pc.textContent=val===null?'—':layer==='delta'?(val>0?'+':'')+val+' pt':val+' %';
     }
     drawText(g,obj.name,val);if(layer==='coverage'&&percent(obj.id)>=65){g.querySelectorAll('text').forEach(t=>t.style.fill='#fff')}
@@ -323,6 +342,35 @@ $('todayButton').onclick=()=>{date=today();render()};
 function fit(){zoom=1;panX=12;panY=12;renderMap()}$('fitButton').onclick=fit;
 $('zoomIn').onclick=()=>{zoom=Math.min(2.8,zoom*1.2);renderMap()};
 $('zoomOut').onclick=()=>{zoom=Math.max(.35,zoom/1.2);renderMap()};
+
+const mapPanel=$('mapPanel');
+function isMapFull(){return document.fullscreenElement===mapPanel||mapPanel.classList.contains('fullscreen-fallback')}
+function updateMapFullscreenButton(){
+ const on=isMapFull();
+ $('mapFullscreen').textContent=on?'✕ Quitter le plein écran':'⛶ Plein écran';
+ $('mapFullscreen').setAttribute('aria-pressed',on?'true':'false');
+}
+$('mapFullscreen').addEventListener('click',async()=>{
+ if(document.fullscreenElement===mapPanel){
+   try{await document.exitFullscreen()}catch(e){console.warn(e)}
+ }else if(mapPanel.classList.contains('fullscreen-fallback')){
+   mapPanel.classList.remove('fullscreen-fallback');
+ }else if(mapPanel.requestFullscreen){
+   try{await mapPanel.requestFullscreen()}catch(e){
+     mapPanel.classList.add('fullscreen-fallback');
+     console.warn('Plein écran navigateur indisponible ; bascule en vue agrandie.',e);
+   }
+ }else mapPanel.classList.add('fullscreen-fallback');
+ updateMapFullscreenButton();
+ renderMap();
+});
+document.addEventListener('fullscreenchange',()=>{updateMapFullscreenButton();renderMap()});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'&&mapPanel.classList.contains('fullscreen-fallback')){
+   mapPanel.classList.remove('fullscreen-fallback');updateMapFullscreenButton();renderMap();
+ }
+});
+
 const viewport=$('mapViewport');viewport.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(2.8,Math.max(.35,zoom*(e.deltaY<0?1.12:.89)));renderMap()},{passive:false});
 viewport.addEventListener('pointerdown',e=>{if(e.target.closest('.node'))return;drag={x:e.clientX,y:e.clientY,px:panX,py:panY};viewport.setPointerCapture(e.pointerId)});viewport.addEventListener('pointermove',e=>{if(nodeDrag){const dx=(e.clientX-nodeDrag.startX)*nodeDrag.scaleX,dy=(e.clientY-nodeDrag.startY)*nodeDrag.scaleY;if(Math.abs(dx)>4||Math.abs(dy)>4)nodeDrag.moved=true;if(nodeDrag.moved){db.positions[nodeDrag.id]={x:Math.round(Math.max(10,nodeDrag.x+dx)),y:Math.round(Math.max(10,nodeDrag.y+dy))};renderMap()}return}if(!drag)return;const rect=viewport.getBoundingClientRect(),logical=$('mapSvg').viewBox.baseVal;panX=drag.px+(e.clientX-drag.x)*logical.width/rect.width;panY=drag.py+(e.clientY-drag.y)*logical.height/rect.height;renderMap()});viewport.addEventListener('pointerup',()=>{drag=null;if(nodeDrag){const n=nodeDrag;nodeDrag=null;if(n.moved){layoutPending=true;touch({autoSave:false});}else{selected=n.id;renderMap();renderDetail()}}});
 $('saveMapLayout').addEventListener('click',async()=>{if(nodeDrag)return;await saveHtmlSameFile();});viewport.addEventListener('pointercancel',()=>{nodeDrag=null;drag=null;renderMap()});
