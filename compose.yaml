@@ -1,0 +1,7 @@
+services:
+  data-hub-cartographie:
+    build: .
+    container_name: data-hub-cartographie
+    ports:
+      - '8080:8080'
+    restart: unless-stopped
