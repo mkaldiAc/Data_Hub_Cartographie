@@ -521,21 +521,29 @@ function renderMap(){
   $('mapBackgroundPicker').value=db.mapBackground||'#ffffff';
   $('mapViewport').style.background=db.mapBackground||'#ffffff';
   const outer=newSvg('g',{transform:'translate('+panX+' '+panY+') scale('+zoom+')'},svg);
+  const focus=getBusinessFocus();
+  $('clearBusinessFocus').hidden=!focus;
+  $('businessFocusLabel').hidden=!focus;
+  $('businessFocusLabel').textContent=focus?focus.title:'';
   for(const obj of db.domains){
     const b=d.pos.get(obj.id);
     for(const parent of obj.parents){
       const a=d.pos.get(parent);if(!a)continue;
       const isHot=selected&&(selected===obj.id||selected===parent);
-      newSvg('path',{d:linkCurve(a,b),class:'edge'+(isHot?' active':'')},outer);
+      const activeRelation=focus&&focus.related.has(parent)&&focus.related.has(obj.id);
+      const edgeClass=focus?(activeRelation?' focus-active':' focus-dim'):(isHot?' active':'');
+      newSvg('path',{d:linkCurve(a,b),class:'edge'+edgeClass},outer);
     }
   }
   for(const obj of db.domains){
     const p=d.pos.get(obj.id),val=layer==='delta'?delta(obj.id):percent(obj.id);
-    const dim=false;
-    const g=newSvg('g',{class:'node'+(obj.id===selected?' selected':'')+(dim?' dim':''),
+    const focusClass=focus?(focus.primary.has(obj.id)?' focus-primary':focus.related.has(obj.id)?' focus-context':' focus-dim'):'';
+    const g=newSvg('g',{class:'node'+(obj.id===selected?' selected':'')+focusClass,
       transform:'translate('+p.x+' '+p.y+')',tabindex:0,role:'button',
       'aria-label':obj.name},outer);
-    newSvg('rect',{width:p.w,height:p.h,rx:10,style:'fill:'+(layer==='coverage'?color(percent(obj.id)):'#fff')+';stroke:#b9cbdc'},g);
+    newSvg('rect',{width:p.w,height:p.h,rx:10,style:'fill:'+(layer==='coverage'?color(percent(obj.id)):'#fff')+
+      ';stroke:'+(focus?.primary.has(obj.id)?'#007b91':focus?.related.has(obj.id)?'#6b9db4':'#b9cbdc')+
+      ';stroke-width:'+(focus?.primary.has(obj.id)?'3':'1.5')},g);
     
     if(layer!=='structure'){
       newSvg('rect',{x:0,y:p.h-6,width:p.w,height:6,rx:3,fill:'#ecf0f4',stroke:'none'},g);
