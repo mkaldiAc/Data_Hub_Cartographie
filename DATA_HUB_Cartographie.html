@@ -365,7 +365,7 @@ function positions(){
   // Le repère SVG est fixe : la caméra se déplace, et non les coordonnées des domaines.
   // Des positions négatives ou très éloignées sont autorisées sur les quatre axes.
   const pos=new Map(),byName=new Map(referenceLayout.map(([name,x,y])=>[name,{x,y}]));
-  const bySeedId=new Map(referenceLayout.map(([,x,y],i)=>['d'+(i+1),{x,y}]));
+  const bySeedId=new Map(names.map(([name],i)=>['d'+(i+1),byName.get(name)]));
   const width=2160,height=1400;
   const current=db.positions||{};
   for(const [i,o] of db.domains.entries()){
