@@ -115,3 +115,13 @@ La sauvegarde HTML autonome a été corrigée : lorsque le document sélectionn�
 - **Thème** : le bandeau latéral reprend l'image de fond de `Aiguillon_design` intégrée en Base64 dans le document lui-même, sans fichier adjacent ni modification du dépôt ARIANE.
 
 La cartographie peut être déplacée (glissement du fond) et zoomée (molette ou boutons). Un domaine peut être repositionné en le faisant glisser directement. Pour transmettre les données, partagez le HTML **après confirmation de l'enregistrement**. Deux utilisateurs ne doivent pas éditer simultanément un même fichier partagé. Le format JSON reste compatible avec les anciennes données sans `positions`.
+
+## Audit et évolutions du 13 octobre 2026 — cartographie et matrice
+
+- **Défaut corrigé** : `new Map(referenceLayout)` traitait les triplets `[nom,x,y]` comme des paires et renvoyait des coordonnées invalides. La conversion explicite `referenceLayout.map(([name,x,y])=>[name,{x,y}])` restaure les 35 positions initiales distinctes.
+- **Cartographie** : cartouches sobres, fond blanc sans calque ; avec le calque « Couverture », le remplissage passe linéairement de `#eaf1fb` à 0 % à `#203864` à 100 %. Les valeurs absentes restent blanches ; le texte passe au blanc sur fond sombre.
+- **Administration** : la saisie des taux s'effectue dans une matrice : lignes = domaines ; colonnes = dates de constat. On ajoute une date, puis on saisit des pourcentages entiers 0–100 avant de cliquer « Enregistrer les couvertures ». Une cellule vide signifie « non renseigné ». La suppression d'une colonne est confirmée et supprime tous les jalons de cette date.
+- **Compatibilité** : les fichiers HTML déjà enregistrés sans `statementDates` reconstruisent leurs dates à partir des jalons existants. Les coordonnées enregistrées sont maintenues.
+- **Contrôles exécutés** : compilation JavaScript ; 35 domaines, 35 positions numériques distinctes, dimensions de carte non nulles ; deux dates de constat conservées après validation JSON ; palette de 0 % et 100 % contrôlée.
+
+**Limite de validation** : ces contrôles sont structurels. Un test visuel et un cycle de sauvegarde/réouverture dans Chrome restent nécessaires sur le poste utilisateur. Si l'ancien document HTML contenait des données modifiées, en faire une copie avant de le remplacer par la nouvelle version, car l'ancienne version ne se met pas à jour d'elle-même.
