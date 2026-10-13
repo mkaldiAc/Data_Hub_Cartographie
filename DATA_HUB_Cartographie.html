@@ -168,10 +168,32 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 .map-inline-controls{padding:7px 13px 8px}
 .json-import-status{margin:0 0 12px;padding:10px 13px;background:#eff4fa;border:1px solid #d9e6f3;border-radius:6px;color:#29467b;font-size:12px;line-height:1.5}
 
+
+/* Frise claire, sans bornes ni légendes pouvant se chevaucher */
+.map-time-bar{padding-bottom:1px}
+.map-time-caption{flex:0 0 190px;gap:1px}
+.map-time-caption span{font-size:11px}
+.map-time-caption strong{font-size:15px;white-space:nowrap}
+.map-time-track{padding-top:2px;--today-split:100%}
+.map-time-track input[type=range]{appearance:none;-webkit-appearance:none;background:transparent;height:21px;cursor:pointer;accent-color:transparent}
+.map-time-track input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:20px;background:linear-gradient(90deg,#3560a4 0%,#3560a4 var(--today-split),#b6d6f3 var(--today-split),#b6d6f3 100%);border:0}
+.map-time-track input[type=range]::-moz-range-track{height:6px;border-radius:20px;background:linear-gradient(90deg,#3560a4 0%,#3560a4 var(--today-split),#b6d6f3 var(--today-split),#b6d6f3 100%);border:0}
+.map-time-track input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;margin-top:-4.5px;border-radius:50%;border:2px solid #fff;background:#29467b;box-shadow:0 0 0 2px #3560a4}
+.map-time-track.future-selection input[type=range]::-webkit-slider-thumb{background:#9fc5e8;box-shadow:0 0 0 2px #8faadc}
+.map-time-track input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;border:2px solid #3560a4;background:#29467b}
+.map-time-track.future-selection input[type=range]::-moz-range-thumb{background:#9fc5e8;border-color:#8faadc}
+.time-stops{height:19px}
+.time-stop{width:14px;height:14px;border:2px solid #3560a4;background:#eaf1fb;border-radius:50%;top:2px}
+.time-stop.future{border-color:#81b0e2;background:#dfedfa;border-style:solid}
+.time-stop.active{border-color:#29467b;background:#29467b;box-shadow:0 0 0 3px #8faadc66}
+.time-stop.future.active{border-color:#6b9ed8;background:#9fc5e8;box-shadow:0 0 0 3px #b6d6f388}
+.time-point-label,.time-ends,.map-inline-status{display:none!important}
+@media(max-width:850px){.map-time-caption{flex-basis:145px}.map-time-caption strong{font-size:13px}}
+
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
-<main><header class="top"><div><span class="overline">PILOTAGE DE L'ENTREPÔT DE DONNÉES</span><h1 id="pageTitle">Cartographie des domaines</h1><p id="pageDesc">Une vision partagée de la cible, du réalisé et de la trajectoire.</p></div><div class="actions admin-actions" id="adminActions" hidden><button class="btn secondary" id="saveHtmlCopy">Enregistrer une copie</button><span id="storageStatus" class="storage-status">● Mode local</span><button class="btn secondary" id="exportButton">Exporter JSON</button><button class="btn secondary" id="importButton" type="button">Importer JSON</button><input id="importFile" type="file" accept=".json,application/json" hidden></div></header>
+<main><header class="top"><div><span class="overline">PILOTAGE DE L'ENTREPÔT DE DONNÉES</span><h1 id="pageTitle">Cartographie des domaines</h1><p id="pageDesc">Une vision partagée de la cible, du réalisé et de la trajectoire.</p></div><div class="actions admin-actions" id="adminActions" hidden><button class="btn" id="saveHtmlDirect" type="button" title="Écrire les données actuellement chargées dans ce fichier HTML">Enregistrer le HTML</button><button class="btn secondary" id="saveHtmlCopy">Enregistrer une copie</button><span id="storageStatus" class="storage-status">● Mode local</span><button class="btn secondary" id="exportButton">Exporter JSON</button><button class="btn secondary" id="importButton" type="button">Importer JSON</button><input id="importFile" type="file" accept=".json,application/json" hidden></div></header>
 <section id="mapPage"><div class="kpis"><article><small>DOMAINES CIBLES</small><strong id="totalDomains">—</strong><span>pools identifiés</span></article><article><small>COUVERTURE MOYENNE</small><strong id="avgCoverage">—</strong><span>sur les domaines suivis</span></article><article><small>DOMAINES ≥ 80 %</small><strong id="matureDomains">—</strong><span>sur la date choisie</span></article><article><small>POINTS DE SUIVI</small><strong id="totalMilestones">—</strong><span>jalons renseignés</span></article></div>
 <div class="panel map-panel" id="mapPanel">
 <div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small></div><div class="zoom"><button id="mapFullscreen" title="Afficher la cartographie en plein écran" type="button">⛶ Plein écran</button><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div>
@@ -183,14 +205,12 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
     <button class="btn" id="saveMapLayout" type="button" title="Enregistrer les positions et le fond dans le fichier HTML">Enregistrer la carte</button>
   </div>
   <div class="map-time-bar">
-    <div class="map-time-caption"><span>Observation</span><strong id="dateLabel"></strong><small id="datePointCount"></small></div>
+    <div class="map-time-caption"><span>Observation</span><strong id="dateLabel"></strong></div>
     <div class="map-time-track">
       <input type="range" id="dateRange" min="0" max="1" value="0" step="1" aria-label="Naviguer dans les dates de constat">
       <div id="dateMarkers" class="time-stops" aria-label="Dates de constat"></div>
-      <div class="time-ends"><span id="firstDateLabel"></span><span id="lastDateLabel"></span></div>
     </div>
   </div>
-  <div class="map-inline-status" id="mapPlacementMessage" role="status">Déplacez les pools, choisissez un fond, puis enregistrez la carte.</div>
 </div>
 <div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glissez un pool pour le repositionner · Glissez le fond pour naviguer</div></div><div class="legend" id="legend"></div></div>
 <div class="detail panel" id="detail"><div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div></div>
@@ -278,33 +298,26 @@ $('resetPositions').addEventListener('click',()=>{
 function options(select,empty=false,exclude=''){select.innerHTML=(empty?'<option value="">Tous les domaines</option>':'')+db.domains.filter(d=>d.id!==exclude).map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name)+'</option>').join('')}
 function populate(){options($('domainParents'),false,$('domainId').value)}
 function dateControls(){
- const observations=dates();
- const timeline=observations.length?observations:[today()];
+ const observations=dates(),timeline=observations.length?observations:[today()];
  const lo=dayNumber(timeline[0]),hi=dayNumber(timeline[timeline.length-1]);
- const range=$('dateRange');
- range.min=String(lo);
- range.max=String(Math.max(lo+1,hi));
- range.step='1';
+ const range=$('dateRange'),track=range.closest('.map-time-track');
+ range.min=String(lo);range.max=String(Math.max(lo+1,hi));range.step='1';
  range.disabled=observations.length<2;
  const effective=observations.length?nearestDate(dayNumber(date),observations):today();
- date=effective;
- range.value=String(dayNumber(effective));
+ date=effective;range.value=String(dayNumber(effective));
  $('dateLabel').textContent=dayLabel(effective)+(effective>today()?' · prévision':'');
- $('datePointCount').textContent=observations.length
-   ?observations.length+' constat'+(observations.length>1?'s':'')
-   :'Aucun constat enregistré';
- $('firstDateLabel').textContent=observations.length>1?dayLabel(timeline[0]):'';
- $('lastDateLabel').textContent=observations.length>1?dayLabel(timeline[timeline.length-1]):'';
  const duration=Math.max(1,hi-lo);
- $('dateMarkers').innerHTML=observations.length>1?observations.map((d,i)=>{
-    const progress=(dayNumber(d)-lo)/duration*100;
-    const label=(i===0||i===observations.length-1||d===effective||observations.length<=5)?dayLabel(d):'';
-    return '<button type="button" class="time-stop'+(d===effective?' active':'')+(d>today()?' future':'')+
-      '" data-obs-date="'+d+'" style="left:'+progress.toFixed(5)+'%" title="'+dayLabel(d)+'" aria-label="Afficher le constat du '+dayLabel(d)+'">'+
-      (label?'<span class="time-point-label">'+label+'</span>':'')+'</button>';
+ const futureStart=Math.max(0,Math.min(100,(dayNumber(today())-lo)/duration*100));
+ track?.style?.setProperty('--today-split',futureStart.toFixed(4)+'%');
+ track?.classList?.toggle('future-selection',effective>today());
+ $('dateMarkers').innerHTML=observations.length>1?observations.map(d=>{
+  const progress=(dayNumber(d)-lo)/duration*100;
+  return '<button type="button" class="time-stop'+(d===effective?' active':'')+(d>today()?' future':'')+
+   '" data-obs-date="'+d+'" style="left:'+progress.toFixed(5)+'%" title="'+dayLabel(d)+(d>today()?' · prévision':'')+
+   '" aria-label="Afficher le constat du '+dayLabel(d)+(d>today()?' (prévision)':'')+'"></button>';
  }).join(''):'';
  document.querySelectorAll('#dateMarkers .time-stop').forEach(el=>el.addEventListener('click',()=>{
-    date=el.dataset.obsDate;render();
+  date=el.dataset.obsDate;render();
  }));
 }
 function levels(){const cache=new Map();function lev(id,seen=new Set()){if(cache.has(id))return cache.get(id);if(seen.has(id))return 0;seen.add(id);const d=db.domains.find(x=>x.id===id);let l=d?.parents.length?Math.max(...d.parents.map(p=>lev(p,new Set(seen))))+1:0;cache.set(id,l);return l}db.domains.forEach(d=>lev(d.id));return cache}
