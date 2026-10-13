@@ -98,13 +98,89 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 .map-background-control{display:inline-flex!important;align-items:center!important;gap:8px;white-space:nowrap;font-size:12px!important;font-weight:700;color:#29467b!important}
 .map-background-control input[type="color"]{width:39px;height:35px;cursor:pointer;padding:2px;border-radius:6px;border:1px solid #c9d2de;background:#fff}
 #mapViewport{background-image:none!important}
+
+/* Barre compacte intégrée à la cartographie : aucun bandeau séparé. */
+.kpis{margin-bottom:10px}
+.kpis article{padding:12px 17px}
+.kpis article strong{font-size:27px;margin:4px 0 1px}
+.map-heading{padding:9px 14px!important;gap:12px}
+.map-heading b{font-size:15px!important}
+.map-heading small{margin-top:1px!important}
+.map-inline-controls{background:#f8fafc;border-top:1px solid #e1e6ed;padding:7px 12px 5px}
+.map-tool-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.map-tool-strip .toggle{padding:2px}
+.map-tool-strip .toggle button{padding:7px 9px;font-size:12px}
+.map-tool-strip .search{margin-left:0}
+.map-tool-strip .search input{width:180px;padding:7px 9px}
+.map-tool-strip .focus-control{display:flex;align-items:center;gap:6px;font-size:12px;color:#5e6a7d}
+.map-tool-strip select{width:160px;padding:7px 8px}
+.map-tool-strip .btn{padding:8px 10px;font-size:12px}
+.map-tool-strip .map-background-control{font-size:11px}
+.map-tool-strip .map-background-control input[type=color]{height:30px;width:34px}
+.map-time-bar{display:flex;align-items:center;gap:14px;margin-top:7px;padding-top:7px;border-top:1px solid #e1e6ed;min-width:0}
+.map-time-caption{display:flex;flex-direction:column;align-items:flex-start;flex:0 0 152px;gap:2px;font-size:10px;color:#5e6a7d}
+.map-time-caption strong{font-size:12px;color:#203864;white-space:nowrap}
+.map-time-caption small{font-size:10px;color:#64748b}
+.map-time-track{min-width:150px;flex:1;align-self:center;position:relative;padding-top:2px}
+.map-time-track input[type=range]{width:100%;accent-color:#3560a4;margin:0;display:block;height:17px;cursor:pointer}
+.map-time-track input[type=range]:disabled{opacity:.35;cursor:not-allowed}
+.time-stops{position:relative;height:19px;margin:0 8px}
+.time-stop{position:absolute;top:0;transform:translateX(-50%);width:12px;height:12px;border:2px solid #3560a4;border-radius:50%;background:#eaf1fb;padding:0;cursor:pointer}
+.time-stop.active{background:#203864;border-color:#203864;box-shadow:0 0 0 3px #8faadc66}
+.time-stop.future{border-style:dashed}
+.time-stop .time-point-label{position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:9px;white-space:nowrap;color:#405775;font-weight:600;pointer-events:none}
+.time-stop.active .time-point-label{color:#203864;font-weight:800}
+.time-ends{display:flex;justify-content:space-between;color:#77879e;font-size:9px;margin:0 2px;min-height:12px}
+.time-ends:empty{display:none}
+.map-time-bar .date-controls{flex:none;gap:6px}
+.map-time-bar .date-controls input{width:132px;padding:6px 7px;font-size:12px}
+.map-time-bar .date-controls .btn{padding:7px 9px;font-size:12px}
+.map-inline-status{font-size:10px;color:#7c8a9a;min-height:14px;margin-top:3px}
+#mapViewport{height:min(77vh,950px);border-top:1px solid #e1e6ed}
+#mapPanel:fullscreen .map-inline-controls,#mapPanel.fullscreen-fallback .map-inline-controls{flex:none!important}
+@media(max-width:1150px){
+ .map-tool-strip .search input{width:145px}
+ .map-time-bar{flex-wrap:wrap}
+ .map-time-caption{flex-basis:125px}
+ .map-time-track{flex-basis:50%}
+}
+@media(max-width:690px){
+ .map-heading{align-items:flex-start}
+ .map-time-bar{gap:8px}
+ .map-time-caption{flex:1 0 100%}
+ .map-time-track{flex:1 0 100%;order:2}
+ .map-time-bar .date-controls{order:1}
+ .map-tool-strip .search input{width:170px}
+}
+
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
 <main><header class="top"><div><span class="overline">PILOTAGE DE L'ENTREPÔT DE DONNÉES</span><h1 id="pageTitle">Cartographie des domaines</h1><p id="pageDesc">Une vision partagée de la cible, du réalisé et de la trajectoire.</p></div><div class="actions admin-actions" id="adminActions" hidden><button class="btn secondary" id="saveHtmlCopy">Enregistrer une copie</button><span id="storageStatus" class="storage-status">● Mode local</span><button class="btn secondary" id="exportButton">Exporter JSON</button></div></header>
 <section id="mapPage"><div class="kpis"><article><small>DOMAINES CIBLES</small><strong id="totalDomains">—</strong><span>pools identifiés</span></article><article><small>COUVERTURE MOYENNE</small><strong id="avgCoverage">—</strong><span>sur les domaines suivis</span></article><article><small>DOMAINES ≥ 80 %</small><strong id="matureDomains">—</strong><span>sur la date choisie</span></article><article><small>POINTS DE SUIVI</small><strong id="totalMilestones">—</strong><span>jalons renseignés</span></article></div>
-<div class="panel toolbar"><div class="toolrow"><div class="toggle"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div><label class="search">⌕ <input id="filter" placeholder="Rechercher un domaine…"></label><label>Focus <select id="groupFilter"><option value="">Tous les domaines</option></select></label><button class="btn secondary" id="fitButton">⊞ Recentrer</button><label class="map-background-control" for="mapBackgroundPicker">Fond <input id="mapBackgroundPicker" type="color" value="#ffffff" title="Choisir la couleur de fond de la cartographie"></label><button class="btn" id="saveMapLayout" type="button" title="Enregistrer les positions et le fond dans le fichier HTML">Enregistrer la carte</button></div><div class="timeline"><div><label for="dateRange">Date d'observation <strong id="dateLabel"></strong></label><input type="range" id="dateRange" min="0" max="0" value="0"></div><div class="date-controls"><input type="date" id="dateInput"><button id="todayButton" class="btn secondary">Aujourd'hui</button></div></div></div>
-<div class="map-placement-notice" role="status" id="mapPlacementMessage">Déplacez librement les pools puis cliquez sur « Enregistrer le placement ».</div><div class="panel map-panel" id="mapPanel"><div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small><small class="map-subtitle">Vue verticale · ramifications métier · placement personnalisable</small></div><div class="zoom"><button id="mapFullscreen" title="Afficher la cartographie en plein écran" type="button">⛶ Plein écran</button><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div><div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glissez un pool pour le repositionner · Glissez le fond pour naviguer</div></div><div class="legend" id="legend"></div></div>
+<div class="panel map-panel" id="mapPanel">
+<div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small></div><div class="zoom"><button id="mapFullscreen" title="Afficher la cartographie en plein écran" type="button">⛶ Plein écran</button><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div>
+<div class="map-inline-controls">
+  <div class="map-tool-strip">
+    <div class="toggle" aria-label="Calque affiché"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div>
+    <label class="search" title="Rechercher un domaine">⌕ <input id="filter" placeholder="Rechercher un domaine…" aria-label="Rechercher un domaine"></label>
+    <label class="focus-control">Focus <select id="groupFilter" aria-label="Filtrer les domaines"><option value="">Tous les domaines</option></select></label>
+    <button class="btn secondary" id="fitButton">⊞ Recentrer</button>
+    <label class="map-background-control" for="mapBackgroundPicker">Fond <input id="mapBackgroundPicker" type="color" value="#ffffff" title="Choisir la couleur de fond de la cartographie"></label>
+    <button class="btn" id="saveMapLayout" type="button" title="Enregistrer les positions et le fond dans le fichier HTML">Enregistrer la carte</button>
+  </div>
+  <div class="map-time-bar">
+    <div class="map-time-caption"><span>Observation</span><strong id="dateLabel"></strong><small id="datePointCount"></small></div>
+    <div class="map-time-track">
+      <input type="range" id="dateRange" min="0" max="1" value="0" step="1" aria-label="Naviguer dans les dates de constat">
+      <div id="dateMarkers" class="time-stops" aria-label="Dates de constat"></div>
+      <div class="time-ends"><span id="firstDateLabel"></span><span id="lastDateLabel"></span></div>
+    </div>
+    <div class="date-controls"><input type="date" id="dateInput" aria-label="Sélectionner une date précise"><button id="todayButton" class="btn secondary" type="button">Aujourd'hui</button></div>
+  </div>
+  <div class="map-inline-status" id="mapPlacementMessage" role="status">Déplacez les pools, choisissez un fond, puis enregistrez la carte.</div>
+</div>
+<div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glissez un pool pour le repositionner · Glissez le fond pour naviguer</div></div><div class="legend" id="legend"></div></div>
 <div class="detail panel" id="detail"><div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div></div>
 </section>
 <section id="adminPage" hidden><div class="admin-tabs" role="tablist" aria-label="Administration"><button class="active" role="tab" aria-selected="true" aria-controls="coverageAdmin" data-admin-tab="coverage">Couverture des données</button><button role="tab" aria-selected="false" aria-controls="domainAdmin" data-admin-tab="domains">Domaines & dépendances</button></div><div id="domainAdmin" role="tabpanel" hidden><div class="two-col"><div class="panel admin-panel"><h2>Domaines de données</h2><p class="muted">Ajoutez un domaine indépendant ou reliez-le à plusieurs domaines existants.</p><form id="domainForm"><input type="hidden" id="domainId"><label>Nom du domaine <input id="domainName" required maxlength="90" placeholder="Ex. Maintenance patrimoniale"></label><label>Description <textarea id="domainDescription" rows="2" placeholder="Périmètre du pool de données"></textarea></label><label>Dépendances (plusieurs choix possibles)<select multiple id="domainParents" size="7"></select><small>Ctrl + clic pour sélectionner plusieurs parents. Laissez vide pour un domaine autonome.</small></label><div class="form-actions"><button class="btn" type="submit">Enregistrer le domaine</button><button class="btn secondary" type="button" id="resetDomain">Nouveau</button><button class="btn danger" type="button" id="deleteDomain" hidden>Supprimer</button></div></form></div></div><div class="panel admin-panel"><div class="admin-help"><b>Disposition de la carte</b><p>Les pools peuvent être déplacés directement sur la cartographie. Leur placement est conservé dans le fichier HTML lors de l’enregistrement.</p><button id="resetPositions" type="button" class="btn secondary">Réinitialiser le placement</button></div></div><div class="panel admin-panel"><h2>Référentiel des domaines</h2><div id="domainTable"></div></div></div><div id="coverageAdmin" role="tabpanel"><div class="panel admin-panel"><div class="coverage-head"><div><h2>Matrice de couverture</h2><p class="muted">Chaque ligne correspond à un domaine et chaque colonne à une date de constat. Une cellule vide signifie « non renseigné ».</p></div><div class="form-actions"><label>Nouvelle date <input id="newStatementDate" type="date"></label><button class="btn" id="addStatementDate" type="button">Ajouter une date</button></div></div><div class="coverage-table-wrap"><table id="coverageMatrix" class="coverage-table"></table></div><div class="coverage-actions"><span id="matrixStatus" role="status" class="muted"></span><button class="btn" id="saveCoverageMatrix">Enregistrer les couvertures</button></div></div></div></section>
