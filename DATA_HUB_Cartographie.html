@@ -81,6 +81,16 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 .node .percent{font-size:14px!important}
 .node rect:first-child{stroke-width:1.5px}
 
+
+.coverage-table-wrap{min-height:280px!important;display:block!important;overflow:auto!important}
+#coverageMatrix{display:table!important;width:max-content!important;min-width:100%!important;table-layout:auto!important}
+#coverageMatrix thead{display:table-header-group!important}
+#coverageMatrix tbody{display:table-row-group!important}
+#coverageMatrix tr{display:table-row!important}
+#coverageMatrix th,#coverageMatrix td{display:table-cell!important}
+#coverageMatrix tbody th.domain-column{min-width:300px}
+#coverageMatrix .matrix-value{min-width:72px!important;max-width:96px!important}
+#coverageMatrix .unit{padding-left:5px;color:#5e6a7d}
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
@@ -296,17 +306,46 @@ $('resetDomain').onclick=resetDomain;
 $('deleteDomain').onclick=()=>{const id=$('domainId').value;if(!id)return;const children=db.domains.filter(d=>d.parents.includes(id));if(children.length){alert('Supprimez d’abord les dépendances de : '+children.map(d=>d.name).join(', '));return}if(!confirm('Supprimer ce domaine et tous ses jalons ?'))return;db.domains=db.domains.filter(d=>d.id!==id);db.milestones=db.milestones.filter(m=>m.domainId!==id);delete db.positions[id];selected=null;resetDomain();touch();if(!linkedHtmlHandle)saveHtmlSameFile()};
 
 function statementDays(){return [...new Set([...(db.statementDates||[]),...db.milestones.map(m=>m.date)])].sort()}
+
 function renderCoverageMatrix(){
- const ds=statementDays(),t=$('coverageMatrix');if(!t)return;
- let html='<thead><tr><th class="domain-column">Domaine</th>'+ds.map(d=>'<th data-statement-header="'+d+'"><div class="date-cell">'+d.split('-').reverse().join('/')+' <button class="remove-date" data-day="'+d+'" title="Supprimer la date et ses valeurs">×</button></div></th>').join('')+'</tr></thead><tbody>';
- for(const domain of db.domains){
-  html+='<tr><th scope="row" class="domain-column">'+esc(domain.name)+'</th>';
-  for(const d of ds){const saved=db.milestones.find(m=>m.domainId===domain.id&&m.date===d)?.value;const v=matrixDrafts.has(domain.id+'|'+d)?matrixDrafts.get(domain.id+'|'+d):saved;html+='<td><input type="number" class="matrix-value" min="0" max="100" step="1" data-domain="'+domain.id+'" data-day="'+d+'" aria-label="'+esc(domain.name)+' '+d+'" value="'+(v??'')+'" placeholder="—"> %</td>'}
-  html+='</tr>';
- }
- t.innerHTML=html+'</tbody>';
- t.querySelectorAll('input').forEach(el=>el.oninput=()=>{const key=el.dataset.domain+'|'+el.dataset.day,m=db.milestones.find(m=>m.domainId===el.dataset.domain&&m.date===el.dataset.day);if(el.value===(m?.value==null?'':String(m.value)))matrixDrafts.delete(key);else matrixDrafts.set(key,el.value);$('matrixStatus').textContent=matrixDrafts.size+' cellule(s) modifiée(s), à enregistrer';});
- t.querySelectorAll('.remove-date').forEach(b=>b.onclick=()=>{const d=b.dataset.day;if(!confirm('Supprimer la date '+d+' et tous les constats associés ?'))return;db.statementDates=(db.statementDates||[]).filter(x=>x!==d);db.milestones=db.milestones.filter(m=>m.date!==d);for(const k of matrixDrafts.keys())if(k.endsWith('|'+d))matrixDrafts.delete(k);touch();if(!linkedHtmlHandle)saveHtmlSameFile()});
+ const ds=statementDays(),t=$('coverageMatrix');
+ if(!t)return;
+ const oldScroll=t.closest('.coverage-table-wrap')?.scrollLeft||0;
+ const head='<thead><tr><th scope="col" class="domain-column">Domaine de données</th>'+
+   ds.map(d=>'<th scope="col" data-statement-header="'+d+'"><div class="date-cell">'+
+     d.split('-').reverse().join('/')+
+     '<button type="button" class="remove-date" data-day="'+d+'" title="Supprimer cette date et ses valeurs" aria-label="Supprimer la date '+d+'">×</button></div></th>').join('')+
+   '</tr></thead>';
+ const body='<tbody>'+db.domains.map(domain=>{
+   const cells=ds.map(d=>{
+     const saved=db.milestones.find(m=>m.domainId===domain.id&&m.date===d)?.value;
+     const key=domain.id+'|'+d;
+     const v=matrixDrafts.has(key)?matrixDrafts.get(key):saved;
+     return '<td><input class="matrix-value" type="number" min="0" max="100" step="1" inputmode="numeric" data-domain="'+domain.id+
+       '" data-day="'+d+'" aria-label="'+esc(domain.name)+' au '+d+'" value="'+(v??'')+'" placeholder="—"><span class="unit">%</span></td>';
+   }).join('');
+   return '<tr><th scope="row" class="domain-column">'+esc(domain.name)+'</th>'+cells+'</tr>';
+ }).join('')+'</tbody>';
+ t.innerHTML=head+body;
+ if(t.closest('.coverage-table-wrap'))t.closest('.coverage-table-wrap').scrollLeft=oldScroll;
+ $('matrixStatus').textContent=ds.length
+   ? ds.length+' date(s) de constat · '+db.domains.length+' domaines · '+(matrixDrafts.size?matrixDrafts.size+' saisie(s) non enregistrée(s)':'prêt pour la saisie')
+   : 'Aucune date de constat : ajoutez votre première date pour afficher les colonnes de saisie.';
+ t.querySelectorAll('.matrix-value').forEach(input=>input.addEventListener('input',()=>{
+   const key=input.dataset.domain+'|'+input.dataset.day;
+   const saved=db.milestones.find(m=>m.domainId===input.dataset.domain&&m.date===input.dataset.day)?.value;
+   if(input.value===(saved==null?'':String(saved)))matrixDrafts.delete(key);
+   else matrixDrafts.set(key,input.value);
+   $('matrixStatus').textContent=matrixDrafts.size+' cellule(s) modifiée(s) · cliquer sur « Enregistrer les couvertures »';
+ }));
+ t.querySelectorAll('.remove-date').forEach(button=>button.addEventListener('click',()=>{
+   const d=button.dataset.day;
+   if(!confirm('Supprimer la date du '+d+' et tous les constats associés ?'))return;
+   db.statementDates=(db.statementDates||[]).filter(x=>x!==d);
+   db.milestones=db.milestones.filter(m=>m.date!==d);
+   for(const key of [...matrixDrafts.keys()])if(key.endsWith('|'+d))matrixDrafts.delete(key);
+   touch();if(!linkedHtmlHandle)saveHtmlSameFile();
+ }));
 }
 $('addStatementDate').onclick=()=>{
  const d=$('newStatementDate').value;
