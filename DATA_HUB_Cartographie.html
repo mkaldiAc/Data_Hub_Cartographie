@@ -360,18 +360,19 @@ const referenceLayout=[
 ['Contentieux CSR',1770,1125]
 ];
 function positions(){
-  const pos=new Map(),initial=new Map(referenceLayout.map(([name,x,y])=>[name,{x,y}]));
+  // Le repère SVG est fixe : la caméra se déplace, et non les coordonnées des domaines.
+  // Des positions négatives ou très éloignées sont autorisées sur les quatre axes.
+  const pos=new Map(),byName=new Map(referenceLayout.map(([name,x,y])=>[name,{x,y}]));
+  const bySeedId=new Map(referenceLayout.map(([,x,y],i)=>['d'+(i+1),{x,y}]));
   const width=2160,height=1400;
   const current=db.positions||{};
-  const columnSize=245,rowSize=112;
-  const newcomers=db.domains.filter(o=>!initial.has(o.name));
   for(const [i,o] of db.domains.entries()){
-    const ref=initial.get(o.name);
-    const fallback=ref?[ref.x,ref.y]:[300+(i%6)*columnSize,1200+Math.floor(i/6)*rowSize];
+    const ref=byName.get(o.name)||bySeedId.get(o.id);
+    const fallback=ref?[ref.x,ref.y]:[300+(i%6)*245,1200+Math.floor(i/6)*112];
     const p=current[o.id]||{x:fallback[0],y:fallback[1]};
     pos.set(o.id,{x:p.x,y:p.y,w:264,h:104});
   }
-  return {pos,width:Math.max(width,...[...pos.values()].map(p=>p.x+p.w+85)),height:Math.max(height,...[...pos.values()].map(p=>p.y+p.h+100))};
+  return {pos,width,height};
 }
 function drawText(g,name,v=null){
   const words=name.split(/\s+/),lines=[];
@@ -427,7 +428,16 @@ function renderMap(){
       pc.textContent=val===null?'—':layer==='delta'?(val>0?'+':'')+val+' pt':val+' %';
     }
     drawText(g,obj.name,val);if(layer==='coverage'&&percent(obj.id)>=65){g.querySelectorAll('text').forEach(t=>t.style.fill='#fff')}
-    g.addEventListener('pointerdown',event=>{if(event.button!==0)return;event.stopPropagation();event.preventDefault();const rect=$('mapViewport').getBoundingClientRect(),logical=$('mapSvg').viewBox.baseVal;nodeDrag={id:obj.id,startX:event.clientX,startY:event.clientY,x:p.x,y:p.y,moved:false,scaleX:logical.width/rect.width/zoom,scaleY:logical.height/rect.height/zoom};$('mapViewport').setPointerCapture(event.pointerId);});
+    g.addEventListener('pointerdown',event=>{
+      if(event.button!==0)return;
+      event.stopPropagation();event.preventDefault();
+      const rect=$('mapSvg').getBoundingClientRect(),logical=$('mapSvg').viewBox.baseVal;
+      // preserveAspectRatio="meet" : même échelle X et Y, centrage éventuel.
+      const unitPixels=Math.min(rect.width/logical.width,rect.height/logical.height);
+      nodeDrag={id:obj.id,startX:event.clientX,startY:event.clientY,
+        lastX:event.clientX,lastY:event.clientY,x:p.x,y:p.y,moved:false,unitPixels};
+      $('mapViewport').setPointerCapture(event.pointerId);
+    });
     g.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selected=obj.id;renderMap();renderDetail()}});
   }
   $('mapCount').textContent=db.domains.length+' domaines · '+db.domains.reduce((n,o)=>n+o.parents.length,0)+' dépendances';
@@ -512,7 +522,19 @@ $('saveCoverageMatrix').onclick=()=>{
 };
 document.querySelectorAll('[data-layer]').forEach(b=>b.onclick=()=>{layer=b.dataset.layer;document.querySelectorAll('[data-layer]').forEach(x=>x.classList.toggle('active',x===b));renderMap()});
 $('dateRange').oninput=e=>{const ds=dates();if(!ds.length)return;date=nearestDate(Number(e.target.value),ds);render()};
-function fit(){zoom=1;panX=12;panY=12;renderMap()}$('fitButton').onclick=fit;
+function fit(){
+  const d=positions(),ps=[...d.pos.values()];
+  if(!ps.length){zoom=1;panX=45;panY=45;renderMap();return}
+  const minX=Math.min(...ps.map(p=>p.x)),maxX=Math.max(...ps.map(p=>p.x+p.w));
+  const minY=Math.min(...ps.map(p=>p.y)),maxY=Math.max(...ps.map(p=>p.y+p.h));
+  const padding=60;
+  zoom=Math.max(.15,Math.min(1,(d.width-2*padding)/Math.max(1,maxX-minX),
+                                  (d.height-2*padding)/Math.max(1,maxY-minY)));
+  panX=(d.width-(maxX-minX)*zoom)/2-minX*zoom;
+  panY=(d.height-(maxY-minY)*zoom)/2-minY*zoom;
+  renderMap();
+}
+$('fitButton').onclick=fit;
 $('zoomIn').onclick=()=>{zoom=Math.min(2.8,zoom*1.2);renderMap()};
 $('zoomOut').onclick=()=>{zoom=Math.max(.35,zoom/1.2);renderMap()};
 
@@ -545,7 +567,51 @@ document.addEventListener('keydown',e=>{
 });
 
 const viewport=$('mapViewport');viewport.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(2.8,Math.max(.35,zoom*(e.deltaY<0?1.12:.89)));renderMap()},{passive:false});
-viewport.addEventListener('pointerdown',e=>{if(e.target.closest('.node'))return;drag={x:e.clientX,y:e.clientY,px:panX,py:panY};viewport.setPointerCapture(e.pointerId)});viewport.addEventListener('pointermove',e=>{if(nodeDrag){const dx=(e.clientX-nodeDrag.startX)*nodeDrag.scaleX,dy=(e.clientY-nodeDrag.startY)*nodeDrag.scaleY;if(Math.abs(dx)>4||Math.abs(dy)>4)nodeDrag.moved=true;if(nodeDrag.moved){db.positions[nodeDrag.id]={x:Math.round(Math.max(10,nodeDrag.x+dx)),y:Math.round(Math.max(10,nodeDrag.y+dy))};renderMap()}return}if(!drag)return;const rect=viewport.getBoundingClientRect(),logical=$('mapSvg').viewBox.baseVal;panX=drag.px+(e.clientX-drag.x)*logical.width/rect.width;panY=drag.py+(e.clientY-drag.y)*logical.height/rect.height;renderMap()});viewport.addEventListener('pointerup',()=>{drag=null;if(nodeDrag){const n=nodeDrag;nodeDrag=null;if(n.moved){layoutPending=true;touch({autoSave:false});}else{selected=n.id;renderMap();renderDetail()}}});
+function screenSvgScale(){
+  const rect=$('mapSvg').getBoundingClientRect(),v=$('mapSvg').viewBox.baseVal;
+  return Math.min(rect.width/v.width,rect.height/v.height);
+}
+viewport.addEventListener('pointerdown',e=>{
+  if(nodeDrag||e.target.closest('.node'))return;
+  drag={x:e.clientX,y:e.clientY,px:panX,py:panY,unitPixels:screenSvgScale()};
+  viewport.setPointerCapture(e.pointerId);
+});
+viewport.addEventListener('pointermove',e=>{
+  if(nodeDrag){
+    const n=nodeDrag;
+    const changeX=e.clientX-n.lastX,changeY=e.clientY-n.lastY;
+    if(Math.abs(e.clientX-n.startX)>4||Math.abs(e.clientY-n.startY)>4)n.moved=true;
+    if(n.moved){
+      n.x+=changeX/(n.unitPixels*zoom);
+      n.y+=changeY/(n.unitPixels*zoom);
+      // Défilement automatique aux quatre bords : pas de limite x/y à 10.
+      // Le monde est infini ; on ajuste la caméra sans déplacer le cartouche sous le curseur.
+      const r=viewport.getBoundingClientRect(),margin=52;
+      const dx=e.clientX<r.left+margin?(r.left+margin-e.clientX):
+               e.clientX>r.right-margin?(r.right-margin-e.clientX):0;
+      const dy=e.clientY<r.top+margin?(r.top+margin-e.clientY):
+               e.clientY>r.bottom-margin?(r.bottom-margin-e.clientY):0;
+      if(dx){const cameraShift=dx/n.unitPixels;panX+=cameraShift;n.x-=cameraShift/zoom}
+      if(dy){const cameraShift=dy/n.unitPixels;panY+=cameraShift;n.y-=cameraShift/zoom}
+      db.positions[n.id]={x:Math.round(n.x),y:Math.round(n.y)};
+      renderMap();
+    }
+    n.lastX=e.clientX;n.lastY=e.clientY;
+    return;
+  }
+  if(!drag)return;
+  panX=drag.px+(e.clientX-drag.x)/drag.unitPixels;
+  panY=drag.py+(e.clientY-drag.y)/drag.unitPixels;
+  renderMap();
+});
+viewport.addEventListener('pointerup',()=>{
+  drag=null;
+  if(nodeDrag){
+    const n=nodeDrag;nodeDrag=null;
+    if(n.moved){layoutPending=true;touch({autoSave:false})}
+    else{selected=n.id;renderMap();renderDetail()}
+  }
+});
 $('saveMapLayout').addEventListener('click',async()=>{if(nodeDrag)return;await saveHtmlSameFile()});
 $('mapBackgroundPicker').addEventListener('input',event=>{
  if(event.target.value===db.mapBackground)return;
@@ -596,7 +662,7 @@ $('importFile').onchange=async e=>{
  }finally{e.target.value=''}
 };
 // Ancien champ milestoneDate supprimé avec la migration de la matrice.
-resetDomain();render();go('map');
+resetDomain();render();go('map');fit();
 
 
 /* Sauvegarde du document HTML autonome : API File System Access. */
