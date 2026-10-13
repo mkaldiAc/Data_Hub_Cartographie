@@ -182,46 +182,85 @@ async function verifyAccess(handle){
     }
   }
 }
-async function saveHtmlSameFile(){
-  if(!window.showOpenFilePicker){
-    writeNotice('Écriture directe indisponible ici. Utilisez Enregistrer une copie.');
-    alert('La sélection d’un fichier en écriture n’est pas disponible avec ce navigateur ou ce contexte. Utilisez Enregistrer une copie.');
+
+function sameData(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function mergeThreeWay(base,local,remote){
+  const mergeSet=(type,oldItems,localItems,remoteItems,keyFn)=>{
+    const old=new Map(oldItems.map(x=>[keyFn(x),x]));
+    const mine=new Map(localItems.map(x=>[keyFn(x),x]));
+    const theirs=new Map(remoteItems.map(x=>[keyFn(x),x]));
+    const out=[];
+    for(const key of new Set([...old.keys(),...theirs.keys(),...mine.keys()])){
+      const before=old.get(key),localItem=mine.get(key),remoteItem=theirs.get(key);
+      const localChanged=!sameData(before,localItem);
+      const remoteChanged=!sameData(before,remoteItem);
+      if(localChanged&&remoteChanged&&!sameData(localItem,remoteItem))
+        throw Error('Conflit sur '+type+' « '+(localItem?.name||remoteItem?.name||key)+' ». Enregistrez une copie pour conserver vos modifications.');
+      const chosen=localChanged?localItem:remoteItem;
+      if(chosen!==undefined)out.push(chosen);
+    }
+    return out;
+  };
+  return valid({version:1,
+    domains:mergeSet('le domaine',base.domains,local.domains,remote.domains,x=>x.id),
+    milestones:mergeSet('le jalon',base.milestones,local.milestones,remote.milestones,x=>x.domainId+'|'+x.date),
+    updatedAt:new Date().toISOString()});
+}
+function queueHtmlAutoSave(){
+  if(!linkedHtmlHandle)return;
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer=setTimeout(()=>saveHtmlSameFile({automatic:true}),600);
+}
+async function saveHtmlSameFile(options={}){
+  const automatic=options?.automatic===true;
+  if(saveInProgress){if(automatic)queueHtmlAutoSave();return}
+  if(!linkedHtmlHandle&&!window.showOpenFilePicker){
+    writeNotice('Écriture directe indisponible. Utilisez Enregistrer une copie.');
+    if(!automatic)alert('Chrome ne permet pas de sélectionner un fichier HTML en écriture ici.');
     return;
   }
+  saveInProgress=true;
   try{
     if(!linkedHtmlHandle){
-      // Le sélecteur doit partir directement du geste utilisateur.
       const [candidate]=await window.showOpenFilePicker({
-        types:[{description:'Application DATA HUB HTML',accept:{'text/html':['.html']}}],
-        excludeAcceptAllOption:true,
-        multiple:false
+        types:[{description:'DATA HUB HTML',accept:{'text/html':['.html']}}],
+        excludeAcceptAllOption:true,multiple:false
       });
       if(!candidate)return;
       if(currentHtmlLocation&&candidate.name!==currentHtmlLocation)
-        throw Error('Choisissez le fichier actuellement ouvert : '+currentHtmlLocation+'. Vous avez sélectionné '+candidate.name+'.');
-      const text=await (await candidate.getFile()).text();
-      const onDisk=extractHtmlPayload(text);
-      if(onDisk.revision!==currentRevision)throw Error('Le fichier sélectionné diffère de la version ouverte. Rechargez sa dernière version avant de modifier.');
+        throw Error('Choisissez le fichier actuellement ouvert : '+currentHtmlLocation+'.');
+      extractHtmlPayload(await(await candidate.getFile()).text());
       linkedHtmlHandle=candidate;
       savedHtmlName=candidate.name;
     }
     await verifyAccess(linkedHtmlHandle);
-    const recent=await (await linkedHtmlHandle.getFile()).text();
-    const onDisk=extractHtmlPayload(recent);
-    if(onDisk.revision!==currentRevision)throw Error('Le fichier a changé depuis votre ouverture ou votre dernier enregistrement. Aucun écrasement effectué. Rechargez la dernière version.');
+    const disk=extractHtmlPayload(await(await linkedHtmlHandle.getFile()).text());
+    const remote=disk.payload.bootstrap===true?sample():valid(disk.payload);
+    const local=structuredClone(db),serial=editSerial;
+    const diverged=disk.revision!==currentRevision ||
+      !sameData(remote.domains,persistedState.domains) ||
+      !sameData(remote.milestones,persistedState.milestones);
+    const proposed=diverged?mergeThreeWay(persistedState,local,remote):local;
+    if(!dirty){
+      db=remote;persistedState=structuredClone(remote);currentRevision=disk.revision;
+      render();
+      writeNotice(diverged?'Version du fichier sélectionné chargée. Vous pouvez désormais la modifier.':'Fichier associé. Toute modification sera automatiquement sauvegardée.');
+      return;
+    }
     const nextRevision=uid();
-    await writeToFile(linkedHtmlHandle,serializeHtmlDocument(nextRevision));
+    await writeToFile(linkedHtmlHandle,serializeHtmlDocument(nextRevision,proposed));
     currentRevision=nextRevision;
-    dirty=false;
-    writeNotice('Enregistrement confirmé dans « '+savedHtmlName+' ». Vous pouvez maintenant partager ce fichier ou actualiser la page pour vérifier les données.');
-    status();
+    persistedState=structuredClone(proposed);
+    if(serial===editSerial){db=proposed;dirty=false}
+    else{db=mergeThreeWay(local,db,proposed);dirty=true;queueHtmlAutoSave()}
+    render();
+    writeNotice((diverged?'Versions fusionnées sans conflit. ':'')+'Enregistrement confirmé dans « '+savedHtmlName+' ».');
   }catch(error){
     if(error.name!=='AbortError'){
-      writeNotice('Enregistrement non effectué : '+error.message);
-      alert('Enregistrement non effectué : '+error.message);
+      const msg='Enregistrement non effectué : '+error.message;
+      writeNotice(msg);if(!automatic)alert(msg);
     }
-    status();
-  }
+  }finally{saveInProgress=false;status()}
 }
 async function saveHtmlCopy(){
   const nextRevision=uid();
