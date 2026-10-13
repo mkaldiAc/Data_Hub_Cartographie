@@ -161,3 +161,11 @@ Attention : téléchargez le nouveau HTML depuis GitHub. Gardez une copie de l'a
 - Test logique : 14/10/2026, 14/11/2026 et 14/11/2027 → second repère à **7,8 %** de l'axe ; les 35 domaines sont préservés et le JavaScript est compilable.
 
 Le test final des interactions graphiques dans Chrome est à réaliser sur le fichier autonome téléchargé depuis ce dépôt.
+
+## Simplification et réimport JSON (13 octobre 2026)
+
+- Cartographie : suppression des commandes Recherche, Focus, calendrier libre et Aujourd’hui. La sélection des constats s'effectue exclusivement par la frise proportionnelle. Dates de constat agrandies (13 px) pour faciliter la lecture.
+- Administration : nouveau bouton **Importer JSON** à côté de **Exporter JSON** dans l'en-tête. Accepte les exports historiques du schéma `version:1`, y compris ceux ne contenant pas `statementDates`, `positions` ou `mapBackground` ; les valeurs absentes sont reconstituées ou initialisées par défaut.
+- Import : analyse complète et validation du JSON, vérification des références des domaines, absence de cycle, validité des jalons et rejet des doublons domaine/date, confirmation avant écrasement, téléchargement préalable de sécurité du référentiel courant, puis mise à jour et écriture dans le HTML. En cas d'échec, l'interface indique qu'il reste à enregistrer ou à exporter une copie.
+- Le schéma reste en **version 1** et conserve les propriétés JSON additionnelles inconnues pour favoriser la compatibilité avec de futures évolutions. Toute version supérieure non prise en charge est rejetée explicitement au lieu d'être importée partiellement.
+- Audit réalisé : compilation du JavaScript, 35 domaines de référence, import d'un ancien modèle sans nouveaux champs, reconstruction de la date de constat et conservation d'un champ additionnel. Test complet de sélection de fichier dans Chrome à valider sur le poste utilisateur.
