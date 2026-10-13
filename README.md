@@ -192,3 +192,40 @@ Le test final des interactions graphiques dans Chrome est à réaliser sur le fi
 - Dans l'en-tête de la carte, le pourcentage est désormais un **champ numérique modifiable**, de **5 à 500 %** (pas de 0,5 % dans le champ). Les boutons `+` et `−` ajustent le zoom de 10 points ; la molette reste utilisable. Les changements de zoom préservent le point central de la vue.
 - Le panneau **Disposition de la carte / Réinitialiser le placement** a été supprimé de **Administration → Domaines & dépendances** ; les positions existantes demeurent dans le JSON sauvegardé.
 - Tests structurels : compilation JavaScript et absence de références DOM aux commandes supprimées. Le rendu visuel exact du cadrage est à vérifier dans Chrome.
+
+## Fonction « Réponse métier » — schéma JSON v2
+
+Un troisième onglet **Administration → Réponse métier** permet de créer et modifier des métiers. Chaque métier possède :
+- un identifiant immuable (`id`) ;
+- une direction (`direction`) ;
+- un nom de métier (`name`) ;
+- une liste non vide d'identifiants de domaines (`domainIds`).
+
+Exemple :
+```json
+{
+  "version": 2,
+  "businessResponses": [
+    {
+      "id": "METIER_001",
+      "direction": "Direction du patrimoine",
+      "name": "Gestion technique",
+      "domainIds": ["d8", "d10"]
+    }
+  ]
+}
+```
+
+Ce tableau est une nouvelle propriété du JSON principal : `domains`, `milestones`, `statementDates`, `positions` et `mapBackground` sont conservés. Les fichiers v1 sont automatiquement convertis en v2 avec `businessResponses: []`. Les exports v2 restent importables avec le validateur, et le mécanisme de sauvegarde HTML, de révision et de fusion à trois versions tient compte de `businessResponses`.
+
+La maturité d'un métier à la date d'observation est la **moyenne simple des couvertures connues** de ses domaines rattachés. Une couverture inconnue est exclue de la moyenne et son absence est signalée ; elle n'est pas traitée comme 0 %. Si aucune couverture n'est connue, le métier est non évaluable. La maturité d'une direction est la moyenne simple des métiers évaluables (chacun ayant le même poids). La vue d'analyse se trouve sous la cartographie et suit le sélecteur temporel.
+
+Les domaines ne peuvent pas être supprimés tant qu'ils sont affectés à au moins un métier : retirer d'abord ces affectations.
+
+### Navigation sans surlignage
+
+Les événements natifs `selectstart` et `dragstart` sont annulés dans le conteneur SVG, avec `pointerdown.preventDefault()` en phase de capture et désactivation CSS de la sélection. Les formulaires d'administration ne sont pas affectés.
+
+### Audit
+
+Validations réalisées dans le moteur JavaScript : compilation, migration v1→v2, export/import du modèle v2, refus des références de domaines absentes, moyenne de deux couvertures (60 et 80 → 70), moyenne partielle si un domaine est non renseigné (60 et inconnu → 60), absence de références DOM manquantes. Le parcours d'écriture via File System Access et le test de sélection pendant le glissement demandent encore un test physique dans Chrome.
