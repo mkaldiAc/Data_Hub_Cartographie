@@ -177,3 +177,11 @@ Le test final des interactions graphiques dans Chrome est à réaliser sur le fi
 - Frise : suppression des mentions `7 constats`, `Carte modifiée ...` et des bornes temporelles inférieure/supérieure ; pas de libellés de dates sous les points, pour empêcher les chevauchements. La date sélectionnée reste visible à gauche et chaque repère expose sa date par infobulle et libellé accessible.
 - Les dates prospectives sont représentées avec des points **bleu clair** et le segment temporel après la date courante en bleu clair, les constats passés restant bleu soutenu.
 - Tests techniques : syntaxe JS valide, aucune référence `$()` vers des éléments DOM supprimés, bouton de sauvegarde et mécanisme d'import présents. Le comportement du sélecteur natif doit être validé dans Chrome sur le poste Windows.
+
+## Déplacement libre dans les quatre directions et renommage
+
+- Correction du blocage des cartouches aux bords : suppression de la borne `Math.max(10, ...)`, qui empêchait de déplacer « Comptabilité générale » à gauche ou tout autre domaine au-dessus de la zone initiale. Les coordonnées X/Y peuvent être négatives, sans modifier le schéma JSON `version: 1`.
+- Le repère SVG conserve désormais des dimensions fixes (2160 × 1400) pendant un glissement : il ne s'étire plus lorsqu'un domaine est déplacé hors des limites de départ. Le déplacement calcule les unités à partir de l'échelle réelle du SVG, et la vue défile automatiquement lorsque le curseur est proche des quatre bords.
+- **Recentrer** recalcule le zoom et la translation à partir de tous les domaines, y compris en positions négatives ou éloignées. Les coordonnées restent sauvegardées dans `positions` lors de **Enregistrer la carte**.
+- Dans **Administration → Domaines & dépendances → Référentiel des domaines**, chaque ligne possède désormais **Renommer**. Le nom peut aussi être édité dans la fiche du domaine. L'ID technique est conservé, donc les jalons de couverture, liens de dépendance et positions ne sont pas réinitialisés. Un nom en doublon est refusé.
+- Contrôles réalisés : compilation JS, sérialisation/réimport de coordonnées négatives, positions éloignées et nom modifié, présence de l'action Renommer. Test des gestes graphiques dans Chrome à confirmer sur le poste utilisateur.
