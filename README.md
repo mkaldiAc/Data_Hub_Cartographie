@@ -78,3 +78,24 @@ Palette, typographies, contrastes et navigation inspirés des fichiers `Ariane/h
 ## Points de vigilance avant diffusion large
 
 Vérifier la fidélité du relevé des liens avec les référents métier, préciser la définition opérationnelle de la couverture (table, indicateur, champ, fraîcheur, etc.), organiser une validation des trajectoires, et sécuriser les droits d'écriture avant passage en production.
+
+## Version HTML unique — expérimentation Edge / Chrome
+
+Le fichier [DATA_HUB_Cartographie.html](./DATA_HUB_Cartographie.html) embarque les styles, les scripts et les données. Il peut être copié dans un dossier Teams et partagé comme une pièce jointe, sans Docker ni serveur.
+
+**Test sous Windows / Edge :**
+
+1. Téléchargez `DATA_HUB_Cartographie.html` via GitHub, puis enregistrez-le dans un dossier local Windows (de préférence avant de le déposer sur Teams).
+2. Ouvrez le fichier par double-clic avec **Microsoft Edge**. Saisissez un premier jalon dans **Administration**.
+3. Cliquez sur **Enregistrer**. Au premier usage, choisissez explicitement **le même fichier HTML** dans la fenêtre système et accordez le droit d'écriture. L'application ne peut pas découvrir automatiquement le handle du fichier déjà ouvert.
+4. Une fois le message de confirmation affiché, fermez puis rouvrez le HTML pour vérifier que le jalon a été enregistré dans le document lui-même.
+5. Testez **Enregistrer une copie** : une version HTML autonome différente est créée, sans remplacer l'original.
+
+**Sécurité et limites :**
+- La [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/Window/showOpenFilePicker) exige une action utilisateur et les permissions du navigateur. Son fonctionnement peut être bloqué par la politique de sécurité de l'entreprise.
+- Le bouton Enregistrer compare l'identifiant de révision intégré au document sélectionné avec celui de l'application. En cas de différence, il refuse l'écrasement ; il ne fusionne pas les modifications concurrentes.
+- **La comparaison n'est pas un verrou transactionnel**. Ne pas éditer le même fichier à plusieurs en même temps, particulièrement dans un dossier OneDrive/Teams synchronisé.
+- Une ouverture directe `file://` est à tester dans le navigateur cible. Si le sélecteur n'est pas disponible, utilisez **Enregistrer une copie** ou exécutez via localhost/HTTPS.
+- Les copies enregistrées contiennent également le code applicatif : ne partagez que des fichiers provenant d'une source maîtrisée. Le destinataire doit ouvrir le HTML en tant que fichier local (Teams peut bloquer la prévisualisation du HTML).
+
+La version multi-fichiers et sa compatibilité Docker sont conservées pour les développements ultérieurs.
