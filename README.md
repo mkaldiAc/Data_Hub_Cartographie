@@ -141,3 +141,13 @@ La cartographie peut être déplacée (glissement du fond) et zoomée (molette o
 - Pour la sauvegarde d'un déplacement, cliquer **Enregistrer le placement**, sélectionner le HTML en cours d'utilisation si Chrome le demande, attendre sa confirmation, puis fermer et rouvrir le fichier. Une autre copie du fichier dans le dossier Téléchargements ne se met pas à jour automatiquement.
 
 Un test interactif dans le navigateur Chrome de l'utilisateur reste requis pour confirmer toutes les autorisations de fichier locales.
+
+## Correctif d'initialisation et personnalisation — 13 octobre 2026
+
+- Cause identifiée sur les captures aux indicateurs vides : une référence à `milestoneDate`, supprimé de l'interface, provoquait une erreur JavaScript au démarrage. Cette instruction a été retirée.
+- Sélecteur de couleur de fond sur la cartographie (`input type=color`) et persistance dans `mapBackground` du JSON embarqué. Fond blanc par défaut. Conservation lors d'une fusion de versions non conflictuelles.
+- Cartouches SVG agrandis à 264 × 104 unités et police portée à 23 unités dans les libellés.
+- Le bouton de sauvegarde de la carte attend désormais la fin d'une écriture déjà en cours avant de démarrer la suivante, évitant qu'un clic soit ignoré.
+- Audit par simulation DOM : 35 domaines affichés dans les indicateurs au démarrage, date d'observation initialisée, ajout d'une date produisant 35 champs dans la matrice ; compilation JavaScript vérifiée. Les permissions et l'écriture réelles nécessitent toujours un essai dans Chrome.
+
+Attention : téléchargez le nouveau HTML depuis GitHub. Gardez une copie de l'ancien fichier si vous y avez stocké des données, car le dépôt GitHub et la copie locale ne synchronisent pas leurs données automatiquement.
