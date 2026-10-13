@@ -132,3 +132,12 @@ La cartographie peut être déplacée (glissement du fond) et zoomée (molette o
 - Quand une date de constat est **déjà présente**, le bouton « Ajouter une date » n'affiche plus une alerte : il signale l'existence de cette date et fait défiler la matrice jusqu'à la colonne existante, temporairement surlignée. Si toutes ses valeurs sont vides, la date demeure présente jusqu'à sa suppression volontaire.
 - Les cellules de couverture modifiées mais **non encore validées** sont conservées lors du rafraîchissement de la matrice, notamment après ajout d'une date. Le navigateur avertit à la fermeture si ces saisies ne sont pas validées.
 - Vérifications réalisées : compilation JS, 35 domaines et coordonnées valides, sérialisation des coordonnées de placement et des dates, présence des commandes dans le HTML autonome. **Un essai réel sous Chrome et la réouverture du fichier restent nécessaires pour confirmer le flux système d'autorisation et d'écriture.**
+
+## Correctif du 13 octobre 2026 — Matrice visible, plein écran et positionnement
+
+- Les cartouches de la carte ont été agrandis de 198×66 à 228×86 unités SVG, avec une typographie plus lisible. Un bouton **Plein écran** permet d'afficher la cartographie dans le navigateur ; une vue agrandie de secours est prévue si l'API de plein écran est refusée.
+- La matrice de couverture a été reconstruite avec des sections **thead/tbody** explicites et des règles CSS ciblées qui neutralisent les règles génériques responsables de l'affichage incorrect des cellules. Les **35 domaines** restent visibles même sans date ; ajouter une date ouvre autant de cellules de saisie qu'il y a de domaines.
+- Contrôles de cohérence : 35 domaines, sérialisation d'une date et d'un pourcentage, restauration des positions dans le JSON, compilation JavaScript et présence du mécanisme de plein écran.
+- Pour la sauvegarde d'un déplacement, cliquer **Enregistrer le placement**, sélectionner le HTML en cours d'utilisation si Chrome le demande, attendre sa confirmation, puis fermer et rouvrir le fichier. Une autre copie du fichier dans le dossier Téléchargements ne se met pas à jour automatiquement.
+
+Un test interactif dans le navigateur Chrome de l'utilisateur reste requis pour confirmer toutes les autorisations de fichier locales.
