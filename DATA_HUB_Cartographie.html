@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DATA HUB • Cartographie</title><style>
+/* Design inspiré des fichiers Aiguillon_design d'ARIANE (lecture seule). */
+:root{--blue-950:#203864;--blue-900:#29467b;--blue-800:#3560a4;--blue-100:#eaf1fb;--bg:#f4f6f9;--border:#e1e6ed;--text:#14213d;--muted:#5e6a7d;--teal:#007b91;--font:"Century Gothic","CenturyGothic","AppleGothic","Segoe UI",Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px var(--font)}button,input,select,textarea{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #1d64c8;outline-offset:2px}button:disabled{opacity:.5;cursor:not-allowed}.layout{display:flex;min-height:100vh}.side{width:260px;position:sticky;top:0;align-self:flex-start;min-height:100vh;background:linear-gradient(145deg,#29467b,#203864 65%,#284c7d);color:white;flex-shrink:0;padding:24px 13px;display:flex;flex-direction:column}.brand{display:flex;align-items:center;gap:13px;font-size:19px;font-weight:800;letter-spacing:1px;padding:4px 12px}.brand small{display:block;font-size:9px;letter-spacing:1.1px;margin-top:4px;opacity:.8}.logo{border:1px solid #ffffff88;border-radius:50%;height:38px;width:38px;display:grid;place-items:center;font-size:25px}.side nav{display:grid;gap:5px;margin-top:48px}.side nav button{border:0;background:transparent;color:white;border-radius:6px;padding:13px 14px;text-align:left;font-weight:600}.side nav button.active{background:#ffffff29;box-shadow:inset 3px 0 #8faadc}.side nav button:hover{background:#ffffff24}.side-foot{border-top:1px solid #ffffff33;margin-top:auto;padding:18px 12px;font-size:11px;font-weight:700;letter-spacing:.5px}.side-foot small{font-weight:400;opacity:.7}main{min-width:0;flex:1;max-width:1800px;padding:25px clamp(16px,3vw,40px) 15px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:20px}.top h1{font-size:26px;color:var(--blue-950);margin:7px 0}.top p{color:var(--muted);margin:0}.overline{font-size:10px;font-weight:700;letter-spacing:1.3px;color:var(--teal)}.actions,.form-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.storage-status{color:#66768a;font-size:12px}.btn{border:1px solid var(--blue-800);background:var(--blue-950);color:white;border-radius:5px;padding:10px 14px;font-weight:700}.btn.secondary{background:white;color:var(--blue-950);border-color:#c9d2de}.btn.danger{color:#b42318;background:#fff;border-color:#efb6b4}.btn:hover{filter:brightness(.95)}.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}.kpis article,.panel{background:white;border:1px solid var(--border);border-radius:7px;box-shadow:0 1px 4px #2038640b}.kpis article{padding:18px 20px}.kpis article small{display:block;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.65px}.kpis article strong{display:block;font-size:31px;margin:8px 0 2px;color:var(--blue-950)}.kpis article span{color:var(--muted);font-size:11px}.toolbar{padding:13px 16px;margin-bottom:15px}.toolrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.toggle{display:flex;background:#edf2f8;border-radius:6px;padding:3px}.toggle button{border:0;background:transparent;padding:8px 10px;color:var(--blue-950);border-radius:4px;font-weight:700}.toggle .active{background:var(--blue-950);color:white}.search{display:flex;align-items:center;gap:7px;margin-left:auto;color:var(--muted)}.search input{width:220px}.toolrow input,.toolrow select,.date-controls input,.admin-panel input,.admin-panel select,.admin-panel textarea{background:white;border:1px solid #c9d2de;border-radius:5px;padding:9px 11px;color:var(--text);min-width:0}.toolrow label{font-size:12px;color:var(--muted)}.timeline{display:flex;align-items:end;justify-content:space-between;gap:18px;border-top:1px solid var(--border);margin-top:13px;padding-top:13px}.timeline>div:first-child{flex:1}.timeline label{font-size:12px;color:var(--muted)}.timeline label strong{color:var(--blue-950);margin-left:10px}.timeline input[type=range]{display:block;accent-color:var(--teal);width:100%;margin:12px 0 4px}.date-controls{display:flex;gap:7px;align-items:center}.map-panel{overflow:hidden}.map-heading{padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center}.map-heading b{font-size:16px}.map-heading small{display:block;color:var(--muted);margin-top:4px}.zoom{display:flex;align-items:center;gap:12px}.zoom button{background:#f5f8fc;border:1px solid var(--border);border-radius:4px;width:29px;height:29px;font-size:18px}.zoom span{font-size:12px;color:var(--muted);min-width:45px;text-align:center}#mapViewport{position:relative;overflow:hidden;min-height:630px;height:min(69vh,860px);background:radial-gradient(circle at 20% 10%,#fff 0%,#fafcff 80%);border-top:1px solid var(--border);cursor:grab}#mapViewport:active{cursor:grabbing}#mapSvg{width:100%;height:100%;display:block;touch-action:none}.edge{fill:none;stroke:#a6bacb;stroke-width:2;opacity:.72;vector-effect:non-scaling-stroke}.edge.active{stroke:var(--teal);stroke-width:3}.node rect{fill:white;stroke:#b9c9d8;stroke-width:1.35}.node .accent{fill:var(--teal)}.node text{font:700 12px var(--font);fill:#223551;pointer-events:none}.node .subtext{font:10px var(--font);fill:#64748b}.node{cursor:pointer}.node:hover rect:first-child,.node.selected rect:first-child{stroke:var(--teal);stroke-width:3}.node.dim{opacity:.19}.node .percent{font:800 15px var(--font)}.node .pct-bg{fill:#e6ebf0}.node .pct-bar{fill:var(--teal)}.map-help{position:absolute;bottom:11px;right:16px;color:#94a0ac;font-size:11px;pointer-events:none}.legend{display:flex;gap:17px;flex-wrap:wrap;align-items:center;padding:12px 19px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}.detail{margin-top:15px;padding:20px}.empty-detail{text-align:center;color:var(--muted);padding:10px}.detail-head{display:flex;justify-content:space-between;gap:15px}.detail-head h2{margin:0 0 4px;font-size:19px}.detail-head p{margin:0;color:var(--muted)}.details-grid{display:grid;grid-template-columns:180px 1fr;gap:24px;margin-top:16px}.big-percent{font-size:42px;color:var(--blue-950);font-weight:800}.mini-timeline{display:flex;gap:8px;flex-wrap:wrap}.mini-timeline span{border:1px solid var(--border);border-radius:5px;padding:9px 12px;background:#f9fbff;font-size:12px}.mini-timeline small{display:block;color:var(--muted);margin-top:3px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px}.admin-panel{padding:20px;margin-bottom:15px}.admin-panel h2{font-size:19px;color:var(--blue-950);margin:0 0 10px}.admin-panel h3{font-size:14px;margin:25px 0 10px}.muted{color:var(--muted);line-height:1.6}.admin-panel form{display:grid;gap:14px}.admin-panel form label{display:grid;gap:6px;font-size:12px;font-weight:700;color:var(--blue-950)}.admin-panel textarea{resize:vertical}.admin-panel select[multiple]{min-height:130px}.admin-panel small{font-weight:400;color:var(--muted)}.inline-input{display:flex;align-items:center;gap:8px}.inline-input input{width:110px}.item-list{display:grid;gap:7px}.item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border:1px solid var(--border);border-radius:5px}.item small{display:block;margin-top:3px}.item button,.link-btn{color:var(--blue-800);background:transparent;border:0;text-align:left;font-weight:700}.item .danger{color:#b42318}.notice{background:#eaf1fb;padding:13px;border-radius:6px;margin:14px 0;color:var(--blue-950);line-height:1.6}footer{text-align:center;color:#97a1ad;font-size:11px;padding:24px}section[hidden]{display:none!important}
+@media(max-width:1120px){.side{width:205px}.kpis{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.search{margin-left:0}}@media(max-width:700px){.layout{display:block}.side{position:relative;width:100%;min-height:auto;padding:12px}.side nav{display:flex;overflow:auto;margin-top:12px}.side-foot{display:none}main{padding:16px 10px}.top,.timeline{flex-direction:column;align-items:stretch}.kpis{gap:6px}.kpis article{padding:12px}.kpis article strong{font-size:26px}#mapViewport{height:65vh;min-height:490px}.details-grid{grid-template-columns:1fr}.search input{width:180px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style></head>
+<body><div class="layout">
+<aside class="side"><div class="brand"><span class="logo">◈</span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav><button data-view="map" class="active">◉ &nbsp; Cartographie</button><button data-view="admin">▤ &nbsp; Administration</button><button data-view="storage">▣ &nbsp; Partage & stockage</button></nav><div class="side-foot">AIGUILLON CONSTRUCTION<br><small>Entrepôt de données · pilotage</small></div></aside>
+<main><header class="top"><div><span class="overline">PILOTAGE DE L'ENTREPÔT DE DONNÉES</span><h1 id="pageTitle">Cartographie des domaines</h1><p id="pageDesc">Une vision partagée de la cible, du réalisé et de la trajectoire.</p></div><div class="actions"><button class="btn" id="saveHtml">Enregistrer</button><button class="btn secondary" id="saveHtmlCopy">Enregistrer une copie</button><span id="storageStatus" class="storage-status">● Mode local</span><button class="btn secondary" id="exportButton">Exporter JSON</button></div></header>
+<section id="mapPage"><div class="kpis"><article><small>DOMAINES CIBLES</small><strong id="totalDomains">—</strong><span>pools identifiés</span></article><article><small>COUVERTURE MOYENNE</small><strong id="avgCoverage">—</strong><span>sur les domaines suivis</span></article><article><small>DOMAINES ≥ 80 %</small><strong id="matureDomains">—</strong><span>sur la date choisie</span></article><article><small>POINTS DE SUIVI</small><strong id="totalMilestones">—</strong><span>jalons renseignés</span></article></div>
+<div class="panel toolbar"><div class="toolrow"><div class="toggle"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div><label class="search">⌕ <input id="filter" placeholder="Rechercher un domaine…"></label><label>Focus <select id="groupFilter"><option value="">Tous les domaines</option></select></label><button class="btn secondary" id="fitButton">⊞ Recentrer</button></div><div class="timeline"><div><label for="dateRange">Date d'observation <strong id="dateLabel"></strong></label><input type="range" id="dateRange" min="0" max="0" value="0"></div><div class="date-controls"><input type="date" id="dateInput"><button id="todayButton" class="btn secondary">Aujourd'hui</button></div></div></div>
+<div class="panel map-panel"><div class="map-heading"><div><b>Écosystème des pools de données</b><small id="mapCount"></small></div><div class="zoom"><button id="zoomOut" title="Dézoomer">−</button><span id="zoomIndicator">100 %</span><button id="zoomIn" title="Zoomer">+</button></div></div><div id="mapViewport"><svg id="mapSvg" role="img" aria-label="Cartographie interactive des dépendances entre domaines"></svg><div class="map-help">Molette : zoom · Glisser : déplacer · Cliquer : détails</div></div><div class="legend" id="legend"></div></div>
+<div class="detail panel" id="detail"><div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div></div>
+</section>
+<section id="adminPage" hidden><div class="two-col"><div class="panel admin-panel"><h2>Domaines de données</h2><p class="muted">Ajoutez un domaine indépendant ou reliez-le à plusieurs domaines existants.</p><form id="domainForm"><input type="hidden" id="domainId"><label>Nom du domaine <input id="domainName" required maxlength="90" placeholder="Ex. Maintenance patrimoniale"></label><label>Description <textarea id="domainDescription" rows="2" placeholder="Périmètre du pool de données"></textarea></label><label>Dépendances (plusieurs choix possibles)<select multiple id="domainParents" size="7"></select><small>Ctrl + clic pour sélectionner plusieurs parents. Laissez vide pour un domaine autonome.</small></label><div class="form-actions"><button class="btn" type="submit">Enregistrer le domaine</button><button class="btn secondary" type="button" id="resetDomain">Nouveau</button><button class="btn danger" type="button" id="deleteDomain" hidden>Supprimer</button></div></form></div><div class="panel admin-panel"><h2>Couverture temporelle</h2><p class="muted">Un jalon est un taux associé à une date ; les dates futures correspondent à une prévision.</p><form id="milestoneForm"><label>Domaine <select id="milestoneDomain" required></select></label><label>Date du jalon <input type="date" id="milestoneDate" required></label><label>Couverture (%) <div class="inline-input"><input id="milestoneValue" type="number" min="0" max="100" step="1" required value="0"><b>%</b></div></label><label>Note / hypothèse <textarea id="milestoneNote" rows="2" placeholder="Ex. Mise en production du flux…"></textarea></label><button class="btn" type="submit">Enregistrer le jalon</button></form><h3>Jalons du domaine</h3><div id="milestoneList"></div></div></div><div class="panel admin-panel"><h2>Référentiel des domaines</h2><div id="domainTable"></div></div></section>
+<section id="storagePage" hidden><div class="panel admin-panel"><h2>Un seul fichier HTML, toutes les données intégrées</h2><p>Les domaines, dépendances et jalons de couverture sont intégrés dans ce fichier HTML. Pour modifier le fichier lui-même, cliquez sur <b>Enregistrer</b>, puis sélectionnez le fichier HTML ouvert à l’écran (première utilisation de la session). Autorisez l’écriture dans Edge/Chrome. Les enregistrements suivants peuvent utiliser la même autorisation. Le fichier reste autonome et peut être envoyé à un collègue.</p><p><b>Enregistrer une copie</b> crée une nouvelle version à envoyer ou à archiver, sans toucher au fichier original. La version active et les modifications non sauvegardées sont indiquées en haut de l’écran.</p><div id="htmlSaveMessage" class="notice" role="status">Document ouvert. Aucune modification non enregistrée.</div><p class="muted">Le navigateur n’identifie pas automatiquement le fichier qui a servi à ouvrir la page : lors de la première sauvegarde, choisissez explicitement ce même fichier. Si le fichier a été modifié ailleurs, l’enregistrement sera refusé pour éviter un écrasement. Utilisation recommandée : Microsoft Edge sur Windows. En cas de refus ou de navigateur non compatible, « Enregistrer une copie » utilise un téléchargement standard.</p></div><div hidden><div class="panel admin-panel"><h2>Fichier de données partagé</h2><p>Choisissez un fichier JSON dans un dossier Teams <b>synchronisé localement avec OneDrive</b> et ouvert dans <b>Edge ou Chrome</b>. Les modifications sont alors enregistrées dans ce fichier lorsque vous cliquez sur « Enregistrer sur le dossier ». Les autres collaborateurs doivent recharger le fichier pour voir les changements.</p><div class="form-actions"><button id="openShared" class="btn">Ouvrir un fichier existant</button><button id="createShared" class="btn secondary">Créer un fichier dans un dossier</button><button id="saveShared" class="btn secondary">Enregistrer sur le dossier</button><button id="reloadShared" class="btn secondary">Recharger</button><button id="importButton" class="btn secondary">Importer JSON</button><input id="importFile" type="file" accept="application/json,.json" hidden></div><div id="storageInfo" class="notice"></div><h3>Important pour le travail collaboratif</h3><p>La synchronisation OneDrive n'est pas une base de données transactionnelle : deux personnes modifiant le même fichier en parallèle peuvent créer un conflit. Pour des saisies simultanées fiables et des droits centralisés, utilisez une application hébergée avec Microsoft Graph / SharePoint List ou une API sécurisée.</p><p>La publication d'un HTML dans les « Fichiers » Teams n'en fait pas automatiquement une application web consultable. Pour un accès via URL, hébergez les fichiers statiques sur un site interne (Azure Static Web Apps, par exemple), éventuellement intégré en onglet Teams.</p></div></div></section>
+<footer>DATA HUB · Cartographie des pools · Prototype opérationnel statique</footer></main></div><script id="data-hub-embedded-state" type="application/json">{"version":1,"bootstrap":true,"revision":"seed-data-hub-cartographie-2026-10-13"}</script><script>window.__dataHubTemplate = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;</script><script>
+/* DATA HUB — application statique autonome, sans CDN ni API. */
+'use strict';
+const $=id=>document.getElementById(id);
+const names=[
+['Comptabilité générale',''],
+['Collaborateurs',''],
+['Organisation territoriale','Collaborateurs'],
+['Géographie','Organisation territoriale'],
+['Montage et suivi opérations de promotion immobilière',''],
+['Développement','Montage et suivi opérations de promotion immobilière'],
+['Foncier','Développement'],
+['Patrimoine','Foncier|Organisation territoriale'],
+['Lots','Patrimoine'],
+['Équipements','Lots'],
+['IOT','Équipements'],
+['Copropriété - Aiguillon','Patrimoine'],
+['Diagnostics réglementaires','Patrimoine'],
+['Performance énergétique','Diagnostics réglementaires'],
+['Risques naturels','Performance énergétique'],
+['Contrats','Patrimoine'],
+['Commande','Contrats'],
+['Suivi interventions prestataires','Commande'],
+['Assets management','Patrimoine'],
+['Marché immobilier','Assets management'],
+['Vente HLM','Assets management'],
+['Commercialisation accession','Vente HLM'],
+['Baux','Lots'],
+['Occupation','Baux'],
+['Vacance','Occupation'],
+['Rotation','Vacance'],
+['Demandes - attributions','Baux'],
+['Clients','Baux'],
+['Enquête locataires','Clients'],
+['Réclamations clients','Clients'],
+['Occupants','Clients'],
+['Quittancement - relevés de comptes','Clients'],
+['Encaissements','Quittancement - relevés de comptes'],
+['Impayés','Quittancement - relevés de comptes'],
+['Contentieux CSR','Impayés']
+];
+function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:1,domains,milestones:[],updatedAt:new Date().toISOString()}}
+function valid(raw){if(!raw||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {id:d.id,name:d.name.slice(0,100),description:String(d.description||'').slice(0,1000),parents:d.parents}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>({id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)}));if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');return {version:1,domains:ds,milestones:ms,updatedAt:raw.updatedAt||new Date().toISOString()}}
+const uid=()=>globalThis.crypto?.randomUUID?.()||('id-'+Date.now()+'-'+Math.random().toString(36).slice(2));
+const today=()=>new Date().toLocaleDateString('sv-SE');
+let db;try{const embedded=JSON.parse(document.getElementById('data-hub-embedded-state').textContent);db=embedded.bootstrap?sample():valid(embedded)}catch(e){alert('Le contenu embarqué est invalide : '+e.message);db=sample()}
+let dirty=false, fileHandle=null, selected=null, layer='structure',view='map',focus='',filter='',panX=45,panY=45,zoom=1,drag=null;
+let date=today();const svgNS='http://www.w3.org/2000/svg';const newSvg=(name,attrs={},parent)=>{let el=document.createElementNS(svgNS,name);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,String(v)));if(parent)parent.appendChild(el);return el};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const percent=(id,d=date)=>{const ms=db.milestones.filter(m=>m.domainId===id&&m.date<=d).sort((a,b)=>b.date.localeCompare(a.date));return ms.length?ms[0].value:null};
+const delta=(id,d=date)=>{const prev=db.milestones.filter(m=>m.domainId===id&&m.date<d).sort((a,b)=>b.date.localeCompare(a.date))[0];const cur=percent(id,d);return cur==null?null:cur-(prev?.value??0)};
+const color=v=>v===null?'#ccd5df':v<25?'#d36a63':v<50?'#dfae58':v<80?'#6aa4cf':'#258c73';
+const dates=()=>Array.from(new Set([today(),date,...db.milestones.map(m=>m.date)])).sort();
+function touch(){db.updatedAt=new Date().toISOString();dirty=true;status();render()}
+function status(){$('storageStatus').textContent=(fileHandle?'● Dossier lié':'● Mode local')+(dirty?' · modifications à enregistrer':'');$('storageInfo').textContent=fileHandle?'Fichier lié : '+fileHandle.name+(dirty?' — modifications non enregistrées dans le dossier.':' — enregistré.'):'Aucun fichier Teams lié. Les modifications sont conservées uniquement dans ce navigateur. Exportez-les ou liez un fichier JSON.'}
+function go(next){view=next;for(const v of ['map','admin','storage']){$(v+'Page').hidden=v!==next;document.querySelector('[data-view="'+v+'"]').classList.toggle('active',v===next)}$('pageTitle').textContent=({map:'Cartographie des domaines',admin:'Administration du référentiel',storage:'Partage et stockage'})[next];$('pageDesc').textContent=({map:'Une vision partagée de la cible, du réalisé et de la trajectoire.',admin:'Gérer les domaines, leurs dépendances et les objectifs dans le temps.',storage:'Connecter un fichier JSON hébergé dans votre dossier Teams synchronisé.'})[next];if(next==='map')renderMap()}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>go(b.dataset.view));
+function options(select,empty=false,exclude=''){select.innerHTML=(empty?'<option value="">Tous les domaines</option>':'')+db.domains.filter(d=>d.id!==exclude).map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name)+'</option>').join('')}
+function populate(){options($('groupFilter'),true);$('groupFilter').value=focus;options($('domainParents'),false,$('domainId').value);options($('milestoneDomain'));$('milestoneDomain').value=selected&&db.domains.some(d=>d.id===selected)?selected:db.domains[0]?.id||''}
+function dateControls(){const ds=dates();$('dateRange').max=Math.max(0,ds.length-1);$('dateRange').value=Math.max(0,ds.indexOf(date));$('dateInput').value=date;$('dateLabel').textContent=new Date(date+'T12:00:00').toLocaleDateString('fr-FR')+(date>today()?' · prévision':'');}
+function levels(){const cache=new Map();function lev(id,seen=new Set()){if(cache.has(id))return cache.get(id);if(seen.has(id))return 0;seen.add(id);const d=db.domains.find(x=>x.id===id);let l=d?.parents.length?Math.max(...d.parents.map(p=>lev(p,new Set(seen))))+1:0;cache.set(id,l);return l}db.domains.forEach(d=>lev(d.id));return cache}
+function positions(){const lvl=levels();const groups=new Map();db.domains.forEach((d,i)=>{const l=lvl.get(d.id)||0;if(!groups.has(l))groups.set(l,[]);groups.get(l).push(d)});const mx=Math.max(...groups.keys(),0),height=Math.max(850,...[...groups.values()].map(g=>g.length*88+100));const pos=new Map();groups.forEach((arr,l)=>{const total=arr.length*88;const start=(height-total)/2+20;arr.forEach((d,i)=>pos.set(d.id,{x:35+l*245,y:start+i*88,w:192,h:55}))});return {pos,width:Math.max(1100,100+mx*245+220),height}}
+function drawText(g,name){const words=name.split(' ');let lines=[],line='';for(const word of words){if((line+' '+word).trim().length>26&&line){lines.push(line);line=word}else line=(line+' '+word).trim()}if(line)lines.push(line);if(lines.length>3)lines=[lines[0],lines[1],lines.slice(2).join(' ').slice(0,29)+'…'];lines.forEach((t,i)=>{const e=newSvg('text',{x:14,y:lines.length===1?24:15+i*13},g);e.textContent=t})}
+function renderMap(){if(view!=='map')return;const d=positions(),svg=$('mapSvg');svg.textContent='';svg.setAttribute('viewBox','0 0 '+d.width+' '+d.height);const outer=newSvg('g',{transform:'translate('+panX+' '+panY+') scale('+zoom+')'},svg);const active=new Set();if(selected){active.add(selected);const obj=db.domains.find(x=>x.id===selected);obj?.parents.forEach(p=>active.add(p));db.domains.filter(x=>x.parents.includes(selected)).forEach(x=>active.add(x.id))}
+const focusDesc=new Set();function walk(id){focusDesc.add(id);db.domains.filter(x=>x.parents.includes(id)).forEach(x=>{if(!focusDesc.has(x.id))walk(x.id)})}if(focus)walk(focus);
+for(const child of db.domains){const a=d.pos.get(child.id);for(const parId of child.parents){const p=d.pos.get(parId);if(!p)continue;const x=p.x+p.w,y=p.y+p.h/2,tx=a.x,ty=a.y+a.h/2,mid=(x+tx)/2;newSvg('path',{d:'M'+x+' '+y+' C'+mid+' '+y+' '+mid+' '+ty+' '+tx+' '+ty,class:'edge'+(selected&&(selected===child.id||selected===parId)?' active':'')},outer)}}
+for(const obj of db.domains){const p=d.pos.get(obj.id);const v=layer==='delta'?delta(obj.id):percent(obj.id);const notMatch=(filter&&!obj.name.toLowerCase().includes(filter))||(focus&&!focusDesc.has(obj.id));const g=newSvg('g',{class:'node'+(obj.id===selected?' selected':'')+(notMatch?' dim':''),transform:'translate('+p.x+' '+p.y+')',tabindex:'0',role:'button','aria-label':obj.name+' - couverture '+(percent(obj.id)??'non renseignée')+'%'},outer);newSvg('rect',{width:p.w,height:p.h,rx:7},g);newSvg('rect',{class:'accent',x:0,y:0,width:4,height:p.h,rx:2,fill:layer==='structure'?'#007b91':color(v)},g).setAttribute('style','fill:'+(layer==='structure'?'#007b91':layer==='delta'?'#3560a4':color(v)));const label=newSvg('g',{},g);drawText(label,obj.name);if(layer!=='structure'){const label=newSvg('text',{x:177,y:17,'text-anchor':'end',class:'percent',style:'fill:'+color(v)},g);label.textContent=v===null?'—':layer==='delta'?(v>0?'+':'')+v+' pt':v+'%';newSvg('rect',{class:'pct-bg',x:12,y:44,width:166,height:4,rx:2},g);newSvg('rect',{class:'pct-bar',x:12,y:44,width:166*(layer==='delta'?Math.min(Math.abs(v??0),100)/100:(v??0)/100),height:4,rx:2,style:'fill:'+color(v)},g)}g.addEventListener('click',()=>{selected=obj.id;renderMap();renderDetail()});g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selected=obj.id;renderMap();renderDetail()}})}
+$('mapCount').textContent=db.domains.length+' domaines · '+db.domains.reduce((n,d)=>n+d.parents.length,0)+' relations de dépendance';
+$('zoomIndicator').textContent=Math.round(zoom*100)+' %';
+$('legend').innerHTML=layer==='structure'?'Relations de dépendance • cliquez un pool pour ses détails':layer==='coverage'?[[null,'Non renseigné'],[0,'0 – 24 %'],[25,'25 – 49 %'],[50,'50 – 79 %'],[80,'80 – 100 %']].map(([n,l])=>'<span><i style="background:'+color(n)+'"></i>'+l+'</span>').join(''):'Variation en points par rapport au jalon précédent · sans jalon : non renseigné';
+}
+function renderDetail(){let o=db.domains.find(x=>x.id===selected);if(!o){$('detail').innerHTML='<div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div>';return}let m=db.milestones.filter(x=>x.domainId===o.id).sort((a,b)=>a.date.localeCompare(b.date));let value=percent(o.id);$('detail').innerHTML='<div class="detail-head"><div><h2>'+esc(o.name)+'</h2><p>'+esc(o.description||'Aucune description renseignée')+'</p></div><button class="btn secondary" id="editSelected">Administrer ce domaine</button></div><div class="details-grid"><div><div class="big-percent">'+(value===null?'—':value+' %')+'</div><small>Couverture au '+esc(date)+'</small><p class="muted">'+esc(o.parents.map(id=>db.domains.find(x=>x.id===id)?.name||id).join(' · ')||'Domaine autonome')+'</p></div><div><b>Trajectoire de couverture</b><div class="mini-timeline" style="margin-top:10px">'+(m.length?m.map(x=>'<span><b>'+x.value+' %</b><small>'+esc(x.date)+(x.date>today()?' · prévu':'')+'</small>'+esc(x.note)+'</span>').join(''):'<span>Aucun jalon de couverture enregistré.</span>')+'</div></div></div>';$('editSelected').onclick=()=>{go('admin');editDomain(o.id);$('milestoneDomain').value=o.id;renderMilestones()}}
+function renderMilestones(){const id=$('milestoneDomain').value;const ms=db.milestones.filter(m=>m.domainId===id).sort((a,b)=>b.date.localeCompare(a.date));$('milestoneList').innerHTML='<div class="item-list">'+(ms.length?ms.map(m=>'<div class="item"><div><b>'+m.value+' % · '+esc(m.date)+'</b><small>'+esc(m.note)+(m.date>today()?' · Prévision':'')+'</small></div><button class="danger" data-remove="'+esc(m.id)+'">Supprimer</button></div>').join(''):'<p class="muted">Aucun jalon enregistré.</p>')+'</div>';document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{if(!confirm('Supprimer ce jalon ?'))return;db.milestones=db.milestones.filter(m=>m.id!==b.dataset.remove);touch()})}
+function renderTable(){$('domainTable').innerHTML='<div class="item-list">'+db.domains.map(d=>'<div class="item"><div><button class="link-btn" data-edit="'+esc(d.id)+'">'+esc(d.name)+'</button><small>'+d.parents.length+' dépendance(s) · '+db.milestones.filter(m=>m.domainId===d.id).length+' jalon(s)</small></div><strong>'+(percent(d.id)??'—')+' %</strong></div>').join('')+'</div>';document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editDomain(b.dataset.edit))}
+function editDomain(id){const d=db.domains.find(x=>x.id===id);if(!d)return;$('domainId').value=d.id;$('domainName').value=d.name;$('domainDescription').value=d.description;options($('domainParents'),false,id);[...$('domainParents').options].forEach(o=>o.selected=d.parents.includes(o.value));$('deleteDomain').hidden=false;window.scrollTo({top:0,behavior:'smooth'})}
+function resetDomain(){$('domainForm').reset();$('domainId').value='';$('deleteDomain').hidden=true;options($('domainParents'))}
+function render(){dateControls();populate();const vals=db.domains.map(x=>percent(x.id)).filter(x=>x!==null);$('totalDomains').textContent=db.domains.length;$('avgCoverage').textContent=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length)+' %':'—';$('matureDomains').textContent=db.domains.filter(x=>percent(x.id)!==null&&percent(x.id)>=80).length;$('totalMilestones').textContent=db.milestones.length;renderTable();renderMilestones();renderDetail();renderMap();status()}
+$('domainForm').onsubmit=e=>{e.preventDefault();const id=$('domainId').value||uid();const parents=[...$('domainParents').selectedOptions].map(x=>x.value);const obj={id,name:$('domainName').value.trim(),description:$('domainDescription').value.trim(),parents};if(!obj.name)return;try{const proposed={...db,domains:$('domainId').value?db.domains.map(d=>d.id===id?obj:d):[...db.domains,obj]};db=valid(proposed);resetDomain();touch()}catch(err){alert(err.message)}};
+$('resetDomain').onclick=resetDomain;
+$('deleteDomain').onclick=()=>{const id=$('domainId').value;if(!id)return;const children=db.domains.filter(d=>d.parents.includes(id));if(children.length){alert('Supprimez d’abord les dépendances de : '+children.map(d=>d.name).join(', '));return}if(!confirm('Supprimer ce domaine et tous ses jalons ?'))return;db.domains=db.domains.filter(d=>d.id!==id);db.milestones=db.milestones.filter(m=>m.domainId!==id);selected=null;resetDomain();touch()};
+$('milestoneForm').onsubmit=e=>{e.preventDefault();const domainId=$('milestoneDomain').value,day=$('milestoneDate').value,value=Number($('milestoneValue').value);if(!domainId||!day||!Number.isFinite(value)||value<0||value>100){alert('Valeurs invalides');return}const prior=db.milestones.find(m=>m.domainId===domainId&&m.date===day);if(prior){prior.value=value;prior.note=$('milestoneNote').value}else db.milestones.push({id:uid(),domainId,date:day,value,note:$('milestoneNote').value});date=day;touch()};
+$('milestoneDomain').onchange=renderMilestones;
+$('filter').oninput=e=>{filter=e.target.value.toLowerCase().trim();renderMap()};
+$('groupFilter').onchange=e=>{focus=e.target.value;renderMap()};
+document.querySelectorAll('[data-layer]').forEach(b=>b.onclick=()=>{layer=b.dataset.layer;document.querySelectorAll('[data-layer]').forEach(x=>x.classList.toggle('active',x===b));renderMap()});
+$('dateRange').oninput=e=>{date=dates()[Number(e.target.value)]||today();render()};
+$('dateInput').onchange=e=>{if(e.target.value){date=e.target.value;render()}};
+$('todayButton').onclick=()=>{date=today();render()};
+function fit(){zoom=1;panX=12;panY=12;renderMap()}$('fitButton').onclick=fit;
+$('zoomIn').onclick=()=>{zoom=Math.min(2.8,zoom*1.2);renderMap()};
+$('zoomOut').onclick=()=>{zoom=Math.max(.35,zoom/1.2);renderMap()};
+const viewport=$('mapViewport');viewport.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.min(2.8,Math.max(.35,zoom*(e.deltaY<0?1.12:.89)));renderMap()},{passive:false});
+viewport.addEventListener('pointerdown',e=>{if(e.target.closest('.node'))return;drag={x:e.clientX,y:e.clientY,px:panX,py:panY};viewport.setPointerCapture(e.pointerId)});viewport.addEventListener('pointermove',e=>{if(!drag)return;const rect=viewport.getBoundingClientRect(),logical=$('mapSvg').viewBox.baseVal;panX=drag.px+(e.clientX-drag.x)*logical.width/rect.width;panY=drag.py+(e.clientY-drag.y)*logical.height/rect.height;renderMap()});viewport.addEventListener('pointerup',()=>drag=null);viewport.addEventListener('pointercancel',()=>drag=null);
+function download(){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.href=url;a.download='data-hub-cartographie.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$('exportButton').onclick=download;
+const supported=()=>!!window.showOpenFilePicker&&!!window.showSaveFilePicker;
+async function loadHandle(h){const f=await h.getFile(),raw=JSON.parse(await f.text()),loaded=valid(raw);if(dirty&&!confirm('Remplacer les modifications locales non enregistrées ?'))return;db=loaded;fileHandle=h;dirty=false;selected=null;render();go('map')}
+$('openShared').onclick=async()=>{if(!supported()){alert('Utilisez Microsoft Edge ou Chrome en contexte sécurisé (localhost ou HTTPS). Sinon importez/exportez un fichier JSON.');return}try{const [h]=await showOpenFilePicker({types:[{description:'Fichiers JSON',accept:{'application/json':['.json']}}]});if(h)await loadHandle(h)}catch(e){if(e.name!=='AbortError')alert(e.message)}};
+async function writeShared(){if(!fileHandle)throw Error('Aucun fichier lié. Cliquez d’abord sur « Créer un fichier » ou « Ouvrir un fichier ».');const w=await fileHandle.createWritable();try{await w.write(JSON.stringify(db,null,2));await w.close();dirty=false;status()}catch(e){await w.abort().catch(()=>{});throw e}}
+$('createShared').onclick=async()=>{if(!supported()){alert('La création directe nécessite Edge ou Chrome en contexte sécurisé.');return}try{fileHandle=await showSaveFilePicker({suggestedName:'data-hub-cartographie.json',types:[{description:'JSON',accept:{'application/json':['.json']}}]});if(fileHandle)await writeShared()}catch(e){if(e.name!=='AbortError')alert(e.message)}};
+$('saveShared').onclick=async()=>{try{await writeShared()}catch(e){alert(e.message)}};
+$('reloadShared').onclick=async()=>{if(!fileHandle){alert('Aucun fichier lié');return}try{await loadHandle(fileHandle)}catch(e){alert(e.message)}};
+$('importButton').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{if(dirty&&!confirm('Remplacer les modifications locales ?'))return;db=valid(JSON.parse(await f.text()));fileHandle=null;dirty=true;selected=null;render();go('map')}catch(err){alert(err.message)}finally{e.target.value=''}};
+$('milestoneDate').value=today();resetDomain();render();go('map');
+
+
+/* Sauvegarde du document HTML autonome : API File System Access. */
+const standaloneStateElement=document.getElementById('data-hub-embedded-state');
+const currentHtmlLocation=location.protocol==='file:'?decodeURIComponent(location.pathname.split('/').pop()):null;
+const originalEmbedded=JSON.parse(standaloneStateElement.textContent);
+let currentRevision=originalEmbedded.revision||'seed', linkedHtmlHandle=null;
+let savedHtmlName=currentHtmlLocation||'DATA_HUB_Cartographie.html';
+const oldStatusFunction=status;
+status=function(){
+  oldStatusFunction();
+  const label=document.getElementById('storageStatus');
+  label.textContent=(dirty?'● Modifications non enregistrées':'● Document à jour')+' · '+savedHtmlName;
+  label.style.color=dirty?'#a85c00':'#137a55';
+};
+const writeNotice=message=>{document.getElementById('htmlSaveMessage').textContent=message};
+function extractHtmlPayload(source){
+  const start='<scr'+'ipt id="data-hub-embedded-state" type="application/json">';
+  const end='</scr'+'ipt>';
+  const pos=source.indexOf(start);
+  if(pos<0)throw Error('Le fichier sélectionné n’est pas une version HTML autonome de DATA HUB.');
+  const stop=source.indexOf(end,pos+start.length);
+  if(stop<0)throw Error('Le bloc de données du fichier est incomplet.');
+  const payload=JSON.parse(source.slice(pos+start.length,stop));
+  if(payload.bootstrap!==true)valid(payload);
+  if(!payload.revision)throw Error('Version sans identifiant de révision ; sauvegarde refusée.');
+  return {revision:payload.revision,start:pos+start.length,stop};
+}
+function serializeHtmlDocument(revision){
+  const template=window.__dataHubTemplate;
+  if(!template)throw Error('Modèle HTML indisponible.');
+  const marker=extractHtmlPayload(template);
+  const packed=JSON.stringify({...db,revision}).replace(/</g,'\\u003c').replace(/\\u2028/g,'\\u2028').replace(/\\u2029/g,'\\u2029');
+  return template.slice(0,marker.start)+packed+template.slice(marker.stop);
+}
+function exportHtmlDownload(source){
+  const url=URL.createObjectURL(new Blob([source],{type:'text/html;charset=utf-8'}));
+  const anchor=document.createElement('a');
+  anchor.href=url;
+  anchor.download='DATA_HUB_Cartographie_copie.html';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2500);
+}
+async function writeToFile(handle,contents){
+  const writable=await handle.createWritable();
+  try{await writable.write(contents);await writable.close()}
+  catch(error){try{await writable.abort()}catch{}throw error}
+}
+async function verifyAccess(handle){
+  if(typeof handle.queryPermission==='function'){
+    if(await handle.queryPermission({mode:'readwrite'})!=='granted'){
+      if(typeof handle.requestPermission==='function'){
+        const permission=await handle.requestPermission({mode:'readwrite'});
+        if(permission!=='granted')throw Error('Autorisation d’écriture refusée par le navigateur.');
+      }
+    }
+  }
+}
+async function saveHtmlSameFile(){
+  if(!window.showOpenFilePicker){
+    writeNotice('Écriture directe indisponible ici. Utilisez Enregistrer une copie.');
+    alert('La sélection d’un fichier en écriture n’est pas disponible avec ce navigateur ou ce contexte. Utilisez Enregistrer une copie.');
+    return;
+  }
+  try{
+    if(!linkedHtmlHandle){
+      // Le sélecteur doit partir directement du geste utilisateur.
+      const [candidate]=await window.showOpenFilePicker({
+        types:[{description:'Application DATA HUB HTML',accept:{'text/html':['.html']}}],
+        excludeAcceptAllOption:true,
+        multiple:false
+      });
+      if(!candidate)return;
+      if(currentHtmlLocation&&candidate.name!==currentHtmlLocation)
+        throw Error('Choisissez le fichier actuellement ouvert : '+currentHtmlLocation+'. Vous avez sélectionné '+candidate.name+'.');
+      const text=await (await candidate.getFile()).text();
+      const onDisk=extractHtmlPayload(text);
+      if(onDisk.revision!==currentRevision)throw Error('Le fichier sélectionné diffère de la version ouverte. Rechargez sa dernière version avant de modifier.');
+      linkedHtmlHandle=candidate;
+      savedHtmlName=candidate.name;
+    }
+    await verifyAccess(linkedHtmlHandle);
+    const recent=await (await linkedHtmlHandle.getFile()).text();
+    const onDisk=extractHtmlPayload(recent);
+    if(onDisk.revision!==currentRevision)throw Error('Le fichier a changé depuis votre ouverture ou votre dernier enregistrement. Aucun écrasement effectué. Rechargez la dernière version.');
+    const nextRevision=uid();
+    await writeToFile(linkedHtmlHandle,serializeHtmlDocument(nextRevision));
+    currentRevision=nextRevision;
+    dirty=false;
+    writeNotice('Enregistrement confirmé dans « '+savedHtmlName+' ». Vous pouvez maintenant partager ce fichier ou actualiser la page pour vérifier les données.');
+    status();
+  }catch(error){
+    if(error.name!=='AbortError'){
+      writeNotice('Enregistrement non effectué : '+error.message);
+      alert('Enregistrement non effectué : '+error.message);
+    }
+    status();
+  }
+}
+async function saveHtmlCopy(){
+  const nextRevision=uid();
+  const contents=serializeHtmlDocument(nextRevision);
+  try{
+    if(typeof window.showSaveFilePicker==='function'){
+      const handle=await window.showSaveFilePicker({
+        suggestedName:'DATA_HUB_Cartographie_copie.html',
+        types:[{description:'Document HTML autonome',accept:{'text/html':['.html']}}],
+        excludeAcceptAllOption:true
+      });
+      if(!handle)return;
+      await writeToFile(handle,contents);
+      writeNotice('Copie enregistrée dans « '+handle.name+' ». Le fichier de départ n’a pas été modifié.');
+    }else{
+      exportHtmlDownload(contents);
+      writeNotice('Téléchargement d’une copie HTML demandé. Le fichier de départ n’a pas été modifié.');
+    }
+  }catch(error){
+    if(error.name!=='AbortError'){
+      writeNotice('Échec de la copie : '+error.message);
+      alert('Échec de la copie : '+error.message);
+    }
+  }
+}
+document.getElementById('saveHtml').addEventListener('click',saveHtmlSameFile);
+document.getElementById('saveHtmlCopy').addEventListener('click',saveHtmlCopy);
+window.addEventListener('beforeunload',event=>{
+  if(dirty){event.preventDefault();event.returnValue=''}
+});
+status();
+
+</script></body></html>
