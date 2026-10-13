@@ -239,7 +239,7 @@ const names=[
 ['Contentieux CSR','Impayés']
 ];
 function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:1,domains,milestones:[],positions:{},statementDates:[],mapBackground:'#ffffff',updatedAt:new Date().toISOString()}}
-function valid(raw){if(!raw||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {id:d.id,name:d.name.slice(0,100),description:String(d.description||'').slice(0,1000),parents:d.parents}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>({id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)}));if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');const mapBackground=(typeof raw.mapBackground==='string'&&/^#[0-9a-fA-F]{6}$/.test(raw.mapBackground))?raw.mapBackground.toLowerCase():'#ffffff';const positions={};if(raw.positions&&typeof raw.positions==='object')for(const [id,p] of Object.entries(raw.positions)){if(ids.has(id)&&Number.isFinite(p?.x)&&Number.isFinite(p?.y))positions[id]={x:Math.round(p.x),y:Math.round(p.y)}}const statementDates=[...new Set([...(Array.isArray(raw.statementDates)?raw.statementDates:[]),...ms.map(m=>m.date)])].filter(d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();return {version:1,domains:ds,milestones:ms,positions,statementDates,mapBackground,updatedAt:raw.updatedAt||new Date().toISOString()}}
+function valid(raw){if(!raw||typeof raw!=='object'||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');if(raw.version!==undefined&&(!Number.isInteger(Number(raw.version))||Number(raw.version)>1||Number(raw.version)<1))throw Error('Version de schéma JSON incompatible : '+raw.version);const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {id:d.id,name:d.name.slice(0,100),description:String(d.description||'').slice(0,1000),parents:d.parents}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>({id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)}));if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');const mapBackground=(typeof raw.mapBackground==='string'&&/^#[0-9a-fA-F]{6}$/.test(raw.mapBackground))?raw.mapBackground.toLowerCase():'#ffffff';const positions={};if(raw.positions&&typeof raw.positions==='object')for(const [id,p] of Object.entries(raw.positions)){if(ids.has(id)&&Number.isFinite(p?.x)&&Number.isFinite(p?.y))positions[id]={x:Math.round(p.x),y:Math.round(p.y)}}const statementDates=[...new Set([...(Array.isArray(raw.statementDates)?raw.statementDates:[]),...ms.map(m=>m.date)])].filter(d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();return {...raw,version:1,domains:ds,milestones:ms,positions,statementDates,mapBackground,updatedAt:raw.updatedAt||new Date().toISOString()}}
 const uid=()=>globalThis.crypto?.randomUUID?.()||('id-'+Date.now()+'-'+Math.random().toString(36).slice(2));
 const today=()=>new Date().toLocaleDateString('sv-SE');
 let db;try{const embedded=JSON.parse(document.getElementById('data-hub-embedded-state').textContent);db=embedded.bootstrap?sample():valid(embedded)}catch(e){alert('Le contenu embarqué est invalide : '+e.message);db=sample()}
@@ -549,7 +549,41 @@ $('createShared').onclick=async()=>{if(!supported()){alert('La création directe
 $('saveShared').onclick=async()=>{try{await writeShared()}catch(e){alert(e.message)}};
 $('reloadShared').onclick=async()=>{if(!fileHandle){alert('Aucun fichier lié');return}try{await loadHandle(fileHandle)}catch(e){alert(e.message)}};
 $('importButton').onclick=()=>$('importFile').click();
-$('importFile').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{if(dirty&&!confirm('Remplacer les modifications locales ?'))return;db=valid(JSON.parse(await f.text()));fileHandle=null;dirty=true;selected=null;render();go('map')}catch(err){alert(err.message)}finally{e.target.value=''}};
+$('importFile').onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ const info=$('jsonImportStatus');
+ try{
+  const raw=JSON.parse(await file.text());
+  const candidate=valid(raw);
+  const domainIds=new Set(candidate.domains.map(d=>d.id));
+  const keys=new Set();
+  for(const m of candidate.milestones){
+   const key=m.domainId+'|'+m.date;
+   if(keys.has(key))throw Error('Jalon en double : '+key);
+   keys.add(key);
+  }
+  if(!candidate.domains.length)throw Error('Import vide : aucun domaine');
+  if(matrixDrafts.size>0||dirty){
+   if(!confirm('Des modifications locales ne sont pas enregistrées. Continuer l’import après sauvegarde du référentiel courant ?'))return;
+  }
+  // La copie de sécurité est téléchargée avant toute mutation ; elle reste indépendante du fichier HTML.
+  download();
+  const msg='Le JSON « '+file.name+' » contient '+candidate.domains.length+' domaines, '+candidate.statementDates.length+' dates et '+candidate.milestones.length+' taux. Une sauvegarde du référentiel actuel vient d’être téléchargée. Remplacer les données courantes ?';
+  if(!confirm(msg)){info.textContent='Import annulé : les données courantes sont conservées.';return}
+  db=candidate;
+  matrixDrafts.clear();
+  selected=null;date=today();layoutPending=true;
+  resetDomain();
+  touch({autoSave:false});
+  info.textContent='Import validé : '+db.domains.length+' domaines et '+db.statementDates.length+' dates restaurés. Enregistrement dans le HTML en cours…';
+  await saveHtmlSameFile();
+  if(!dirty)info.textContent='Import terminé et enregistré dans le HTML : '+db.domains.length+' domaines, '+db.statementDates.length+' dates, '+db.milestones.length+' taux.';
+  else info.textContent='Import chargé, mais pas encore enregistré dans le HTML. Utilisez « Enregistrer une copie » si nécessaire.';
+ }catch(err){
+  info.textContent='Import refusé : '+err.message;
+  alert('Import JSON impossible : '+err.message);
+ }finally{e.target.value=''}
+};
 // Ancien champ milestoneDate supprimé avec la migration de la matrice.
 resetDomain();render();go('map');
 
@@ -650,7 +684,7 @@ function mergeThreeWay(base,local,remote){
     }
     return out;
   };
-  return valid({version:1,
+  return valid({...remote,version:1,
     domains:mergeSet('le domaine',base.domains,local.domains,remote.domains,x=>x.id),
     milestones:mergeSet('le jalon',base.milestones,local.milestones,remote.milestones,x=>x.domainId+'|'+x.date),
     positions:mergePositions(base.positions||{},local.positions||{},remote.positions||{}),
