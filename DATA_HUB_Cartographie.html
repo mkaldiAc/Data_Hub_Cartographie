@@ -202,6 +202,20 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 .zoom-custom input::-webkit-inner-spin-button,.zoom-custom input::-webkit-outer-spin-button{opacity:.6}
 .zoom-custom span{font-size:12px;font-weight:600}
 
+
+/* La carte est une surface de manipulation, jamais une zone de sélection de texte.
+   Portée volontairement limitée : formulaires et tableau d'administration inchangés. */
+#mapViewport,#mapViewport *{
+  -webkit-user-select:none!important;
+  user-select:none!important;
+}
+#mapViewport svg text{
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  pointer-events:none!important;
+}
+#mapViewport{touch-action:none}
+
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
@@ -632,11 +646,15 @@ function screenSvgScale(){
   return Math.min(rect.width/v.width,rect.height/v.height);
 }
 viewport.addEventListener('pointerdown',e=>{
-  if(nodeDrag||e.target.closest('.node'))return;
+  if(e.button!==0||nodeDrag||e.target.closest('.node'))return;
+  // Empêche la sélection native de texte pendant le déplacement (pan) de la carte.
+  e.preventDefault();
+  window.getSelection?.()?.removeAllRanges();
   drag={x:e.clientX,y:e.clientY,px:panX,py:panY,unitPixels:screenSvgScale()};
   viewport.setPointerCapture(e.pointerId);
 });
 viewport.addEventListener('pointermove',e=>{
+  if(nodeDrag||drag)e.preventDefault();
   if(nodeDrag){
     const n=nodeDrag;
     const changeX=e.clientX-n.lastX,changeY=e.clientY-n.lastY;
