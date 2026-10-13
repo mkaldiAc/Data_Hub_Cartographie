@@ -105,8 +105,8 @@ const names=[
 ['Impayés','Quittancement - relevés de comptes'],
 ['Contentieux CSR','Impayés']
 ];
-function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:1,domains,milestones:[],updatedAt:new Date().toISOString()}}
-function valid(raw){if(!raw||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {id:d.id,name:d.name.slice(0,100),description:String(d.description||'').slice(0,1000),parents:d.parents}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>({id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)}));if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');return {version:1,domains:ds,milestones:ms,updatedAt:raw.updatedAt||new Date().toISOString()}}
+function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:1,domains,milestones:[],positions:{},updatedAt:new Date().toISOString()}}
+function valid(raw){if(!raw||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {id:d.id,name:d.name.slice(0,100),description:String(d.description||'').slice(0,1000),parents:d.parents}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>({id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)}));if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');const positions={};if(raw.positions&&typeof raw.positions==='object')for(const [id,p] of Object.entries(raw.positions)){if(ids.has(id)&&Number.isFinite(p?.x)&&Number.isFinite(p?.y))positions[id]={x:Math.round(p.x),y:Math.round(p.y)}}return {version:1,domains:ds,milestones:ms,positions,updatedAt:raw.updatedAt||new Date().toISOString()}}
 const uid=()=>globalThis.crypto?.randomUUID?.()||('id-'+Date.now()+'-'+Math.random().toString(36).slice(2));
 const today=()=>new Date().toLocaleDateString('sv-SE');
 let db;try{const embedded=JSON.parse(document.getElementById('data-hub-embedded-state').textContent);db=embedded.bootstrap?sample():valid(embedded)}catch(e){alert('Le contenu embarqué est invalide : '+e.message);db=sample()}
@@ -119,32 +119,178 @@ const color=v=>v===null?'#ccd5df':v<25?'#d36a63':v<50?'#dfae58':v<80?'#6aa4cf':'
 const dates=()=>Array.from(new Set([today(),date,...db.milestones.map(m=>m.date)])).sort();
 function touch(){db.updatedAt=new Date().toISOString();dirty=true;editSerial++;status();render();queueHtmlAutoSave()}
 function status(){$('storageStatus').textContent=(fileHandle?'● Dossier lié':'● Mode local')+(dirty?' · modifications à enregistrer':'');$('storageInfo').textContent=fileHandle?'Fichier lié : '+fileHandle.name+(dirty?' — modifications non enregistrées dans le dossier.':' — enregistré.'):'Aucun fichier Teams lié. Les modifications sont conservées uniquement dans ce navigateur. Exportez-les ou liez un fichier JSON.'}
-function go(next){view=next;for(const v of ['map','admin','storage']){$(v+'Page').hidden=v!==next;document.querySelector('[data-view="'+v+'"]').classList.toggle('active',v===next)}$('pageTitle').textContent=({map:'Cartographie des domaines',admin:'Administration du référentiel',storage:'Partage et stockage'})[next];$('pageDesc').textContent=({map:'Une vision partagée de la cible, du réalisé et de la trajectoire.',admin:'Gérer les domaines, leurs dépendances et les objectifs dans le temps.',storage:'Connecter un fichier JSON hébergé dans votre dossier Teams synchronisé.'})[next];if(next==='map')renderMap()}
+function go(next){view=next;for(const v of ['map','admin','storage']){$(v+'Page').hidden=v!==next;document.querySelector('[data-view="'+v+'"]').classList.toggle('active',v===next)}$('pageTitle').textContent=({map:'Cartographie des domaines',admin:'Administration du référentiel',storage:'Partage et stockage'})[next];$('pageDesc').textContent=({map:'Une vision partagée de la cible, du réalisé et de la trajectoire.',admin:'Gérer les domaines, leurs dépendances et les objectifs dans le temps.',storage:'Connecter un fichier JSON hébergé dans votre dossier Teams synchronisé.'})[next];$('adminActions').hidden=next!=='admin';if(next==='map')renderMap()}
 document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>go(b.dataset.view));
+let adminTab='coverage';
+function openAdminTab(tab){
+  adminTab=tab;
+  $('domainAdmin').hidden=tab!=='domains';
+  $('coverageAdmin').hidden=tab!=='coverage';
+  document.querySelectorAll('[data-admin-tab]').forEach(b=>{
+    b.classList.toggle('active',b.dataset.adminTab===tab);
+    b.setAttribute('aria-selected',b.dataset.adminTab===tab?'true':'false');
+  });
+}
+document.querySelectorAll('[data-admin-tab]').forEach(b=>b.addEventListener('click',()=>openAdminTab(b.dataset.adminTab)));
+openAdminTab('coverage');
+$('resetPositions').addEventListener('click',()=>{
+  if(!confirm('Réinitialiser la disposition de tous les pools ?'))return;
+  db.positions={};touch();
+});
+
 function options(select,empty=false,exclude=''){select.innerHTML=(empty?'<option value="">Tous les domaines</option>':'')+db.domains.filter(d=>d.id!==exclude).map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name)+'</option>').join('')}
 function populate(){const current=$('milestoneDomain').value;options($('groupFilter'),true);$('groupFilter').value=focus;options($('domainParents'),false,$('domainId').value);options($('milestoneDomain'));$('milestoneDomain').value=db.domains.some(d=>d.id===current)?current:selected&&db.domains.some(d=>d.id===selected)?selected:db.domains[0]?.id||''}
 function dateControls(){const ds=dates();$('dateRange').max=Math.max(0,ds.length-1);$('dateRange').value=Math.max(0,ds.indexOf(date));$('dateInput').value=date;$('dateLabel').textContent=new Date(date+'T12:00:00').toLocaleDateString('fr-FR')+(date>today()?' · prévision':'');}
 function levels(){const cache=new Map();function lev(id,seen=new Set()){if(cache.has(id))return cache.get(id);if(seen.has(id))return 0;seen.add(id);const d=db.domains.find(x=>x.id===id);let l=d?.parents.length?Math.max(...d.parents.map(p=>lev(p,new Set(seen))))+1:0;cache.set(id,l);return l}db.domains.forEach(d=>lev(d.id));return cache}
-function positions(){const lvl=levels();const groups=new Map();db.domains.forEach((d,i)=>{const l=lvl.get(d.id)||0;if(!groups.has(l))groups.set(l,[]);groups.get(l).push(d)});const mx=Math.max(...groups.keys(),0),height=Math.max(850,...[...groups.values()].map(g=>g.length*88+100));const pos=new Map();groups.forEach((arr,l)=>{const total=arr.length*88;const start=(height-total)/2+20;arr.forEach((d,i)=>pos.set(d.id,{x:35+l*245,y:start+i*88,w:192,h:55}))});return {pos,width:Math.max(1100,100+mx*245+220),height}}
-function drawText(g,name){const words=name.split(' ');let lines=[],line='';for(const word of words){if((line+' '+word).trim().length>26&&line){lines.push(line);line=word}else line=(line+' '+word).trim()}if(line)lines.push(line);if(lines.length>3)lines=[lines[0],lines[1],lines.slice(2).join(' ').slice(0,29)+'…'];lines.forEach((t,i)=>{const e=newSvg('text',{x:14,y:lines.length===1?24:15+i*13},g);e.textContent=t})}
-function renderMap(){if(view!=='map')return;const d=positions(),svg=$('mapSvg');svg.textContent='';svg.setAttribute('viewBox','0 0 '+d.width+' '+d.height);const outer=newSvg('g',{transform:'translate('+panX+' '+panY+') scale('+zoom+')'},svg);const active=new Set();if(selected){active.add(selected);const obj=db.domains.find(x=>x.id===selected);obj?.parents.forEach(p=>active.add(p));db.domains.filter(x=>x.parents.includes(selected)).forEach(x=>active.add(x.id))}
-const focusDesc=new Set();function walk(id){focusDesc.add(id);db.domains.filter(x=>x.parents.includes(id)).forEach(x=>{if(!focusDesc.has(x.id))walk(x.id)})}if(focus)walk(focus);
-for(const child of db.domains){const a=d.pos.get(child.id);for(const parId of child.parents){const p=d.pos.get(parId);if(!p)continue;const x=p.x+p.w,y=p.y+p.h/2,tx=a.x,ty=a.y+a.h/2,mid=(x+tx)/2;newSvg('path',{d:'M'+x+' '+y+' C'+mid+' '+y+' '+mid+' '+ty+' '+tx+' '+ty,class:'edge'+(selected&&(selected===child.id||selected===parId)?' active':'')},outer)}}
-for(const obj of db.domains){const p=d.pos.get(obj.id);const v=layer==='delta'?delta(obj.id):percent(obj.id);const notMatch=(filter&&!obj.name.toLowerCase().includes(filter))||(focus&&!focusDesc.has(obj.id));const g=newSvg('g',{class:'node'+(obj.id===selected?' selected':'')+(notMatch?' dim':''),transform:'translate('+p.x+' '+p.y+')',tabindex:'0',role:'button','aria-label':obj.name+' - couverture '+(percent(obj.id)??'non renseignée')+'%'},outer);newSvg('rect',{width:p.w,height:p.h,rx:7},g);newSvg('rect',{class:'accent',x:0,y:0,width:4,height:p.h,rx:2,fill:layer==='structure'?'#007b91':color(v)},g).setAttribute('style','fill:'+(layer==='structure'?'#007b91':layer==='delta'?'#3560a4':color(v)));const label=newSvg('g',{},g);drawText(label,obj.name);if(layer!=='structure'){const label=newSvg('text',{x:177,y:17,'text-anchor':'end',class:'percent',style:'fill:'+color(v)},g);label.textContent=v===null?'—':layer==='delta'?(v>0?'+':'')+v+' pt':v+'%';newSvg('rect',{class:'pct-bg',x:12,y:44,width:166,height:4,rx:2},g);newSvg('rect',{class:'pct-bar',x:12,y:44,width:166*(layer==='delta'?Math.min(Math.abs(v??0),100)/100:(v??0)/100),height:4,rx:2,style:'fill:'+color(v)},g)}g.addEventListener('click',()=>{selected=obj.id;renderMap();renderDetail()});g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selected=obj.id;renderMap();renderDetail()}})}
-$('mapCount').textContent=db.domains.length+' domaines · '+db.domains.reduce((n,d)=>n+d.parents.length,0)+' relations de dépendance';
-$('zoomIndicator').textContent=Math.round(zoom*100)+' %';
-$('legend').innerHTML=layer==='structure'?'Relations de dépendance • cliquez un pool pour ses détails':layer==='coverage'?[[null,'Non renseigné'],[0,'0 – 24 %'],[25,'25 – 49 %'],[50,'50 – 79 %'],[80,'80 – 100 %']].map(([n,l])=>'<span><i style="background:'+color(n)+'"></i>'+l+'</span>').join(''):'Variation en points par rapport au jalon précédent · sans jalon : non renseigné';
+
+const referenceLayout=[
+['Comptabilité générale',110,75],
+['Collaborateurs',430,75],
+['Organisation territoriale',710,130],
+['Géographie',1050,130],
+['Montage et suivi opérations de promotion immobilière',70,285],
+['Développement',400,285],
+['Foncier',660,345],
+['Patrimoine',880,440],
+['Copropriété - Aiguillon',80,530],
+['Diagnostics réglementaires',90,665],
+['Performance énergétique',90,785],
+['Risques naturels',90,905],
+['Contrats',380,605],
+['Commande',380,745],
+['Suivi interventions prestataires',380,875],
+['Lots',885,620],
+['Équipements',885,840],
+['IOT',885,960],
+['Assets management',1150,420],
+['Marché immobilier',1170,310],
+['Vente HLM',1420,420],
+['Commercialisation accession',1660,380],
+['Baux',1140,650],
+['Occupation',1140,835],
+['Vacance',1140,960],
+['Rotation',1140,1080],
+['Demandes - attributions',1430,590],
+['Clients',1510,740],
+['Enquête locataires',1770,645],
+['Réclamations clients',1770,755],
+['Occupants',1770,865],
+['Quittancement - relevés de comptes',1510,990],
+['Encaissements',1770,1000],
+['Impayés',1510,1115],
+['Contentieux CSR',1770,1125]
+];
+function positions(){
+  const pos=new Map(),initial=new Map(referenceLayout);
+  const width=2160,height=1400;
+  const current=db.positions||{};
+  const columnSize=245,rowSize=112;
+  const newcomers=db.domains.filter(o=>!initial.has(o.name));
+  for(const [i,o] of db.domains.entries()){
+    const ref=initial.get(o.name);
+    const fallback=ref||[300+(i%6)*columnSize,1200+Math.floor(i/6)*rowSize];
+    const p=current[o.id]||{x:fallback[0],y:fallback[1]};
+    pos.set(o.id,{x:p.x,y:p.y,w:198,h:66});
+  }
+  return {pos,width:Math.max(width,...[...pos.values()].map(p=>p.x+p.w+85)),height:Math.max(height,...[...pos.values()].map(p=>p.y+p.h+100))};
 }
-function renderDetail(){let o=db.domains.find(x=>x.id===selected);if(!o){$('detail').innerHTML='<div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div>';return}let m=db.milestones.filter(x=>x.domainId===o.id).sort((a,b)=>a.date.localeCompare(b.date));let value=percent(o.id);$('detail').innerHTML='<div class="detail-head"><div><h2>'+esc(o.name)+'</h2><p>'+esc(o.description||'Aucune description renseignée')+'</p></div><button class="btn secondary" id="editSelected">Administrer ce domaine</button></div><div class="details-grid"><div><div class="big-percent">'+(value===null?'—':value+' %')+'</div><small>Couverture au '+esc(date)+'</small><p class="muted">'+esc(o.parents.map(id=>db.domains.find(x=>x.id===id)?.name||id).join(' · ')||'Domaine autonome')+'</p></div><div><b>Trajectoire de couverture</b><div class="mini-timeline" style="margin-top:10px">'+(m.length?m.map(x=>'<span><b>'+x.value+' %</b><small>'+esc(x.date)+(x.date>today()?' · prévu':'')+'</small>'+esc(x.note)+'</span>').join(''):'<span>Aucun jalon de couverture enregistré.</span>')+'</div></div></div>';$('editSelected').onclick=()=>{go('admin');editDomain(o.id);$('milestoneDomain').value=o.id;renderMilestones()}}
+function drawText(g,name,v=null){
+  const words=name.split(/\s+/),lines=[];
+  let line='';
+  const limit=v===null?24:20;
+  for(const word of words){
+    if((line+' '+word).trim().length>limit&&line){lines.push(line);line=word}
+    else line=(line+' '+word).trim();
+  }
+  if(line)lines.push(line);
+  if(lines.length>3)lines.splice(2,lines.length-2,lines.slice(2).join(' ').slice(0,23)+'…');
+  const start=lines.length===1?36:lines.length===2?27:20;
+  lines.forEach((part,i)=>{const e=newSvg('text',{x:99,y:start+i*16,'text-anchor':'middle'},g);e.textContent=part});
+}
+function linkCurve(a,b){
+  const ax=a.x+a.w/2,ay=a.y+a.h/2,bx=b.x+b.w/2,by=b.y+b.h/2;
+  const dx=bx-ax,dy=by-ay;
+  if(Math.abs(dy)>Math.abs(dx)*.42){
+    const sy=dy>=0?a.y+a.h:a.y, ey=dy>=0?b.y:b.y+b.h, cx=ax, ex=bx,cy=sy+(ey-sy)/2;
+    return 'M'+cx+' '+sy+' C'+cx+' '+cy+' '+ex+' '+cy+' '+ex+' '+ey;
+  }
+  const sx=dx>=0?a.x+a.w:a.x,ex=dx>=0?b.x:b.x+b.w,cy=ay,ey=by,mx=sx+(ex-sx)/2;
+  return 'M'+sx+' '+cy+' C'+mx+' '+cy+' '+mx+' '+ey+' '+ex+' '+ey;
+}
+function renderMap(){
+  if(view!=='map')return;
+  const d=positions(),svg=$('mapSvg');
+  svg.textContent='';
+  svg.setAttribute('viewBox','0 0 '+d.width+' '+d.height);
+  const outer=newSvg('g',{transform:'translate('+panX+' '+panY+') scale('+zoom+')'},svg);
+  const focusDesc=new Set();
+  function walk(id){if(focusDesc.has(id))return;focusDesc.add(id);db.domains.filter(o=>o.parents.includes(id)).forEach(o=>walk(o.id))}
+  if(focus)walk(focus);
+  for(const obj of db.domains){
+    const b=d.pos.get(obj.id);
+    for(const parent of obj.parents){
+      const a=d.pos.get(parent);if(!a)continue;
+      const isHot=selected&&(selected===obj.id||selected===parent);
+      newSvg('path',{d:linkCurve(a,b),class:'edge'+(isHot?' active':'')},outer);
+    }
+  }
+  for(const obj of db.domains){
+    const p=d.pos.get(obj.id),val=layer==='delta'?delta(obj.id):percent(obj.id);
+    const dim=(filter&&!obj.name.toLowerCase().includes(filter))||(focus&&!focusDesc.has(obj.id));
+    const g=newSvg('g',{class:'node'+(obj.id===selected?' selected':'')+(dim?' dim':''),
+      transform:'translate('+p.x+' '+p.y+')',tabindex:0,role:'button',
+      'aria-label':obj.name},outer);
+    newSvg('rect',{width:p.w,height:p.h,rx:12},g);
+    newSvg('path',{class:'bracket',d:'M20 1 C10 1 1 10 1 20 L1 46 C1 56 10 65 20 65 M178 1 C188 1 197 10 197 20 L197 46 C197 56 188 65 178 65'},g);
+    if(layer!=='structure'){
+      newSvg('rect',{x:0,y:p.h-7,width:p.w,height:7,rx:3,fill:'#ecf0f4',stroke:'none'},g);
+      newSvg('rect',{x:0,y:p.h-7,width:p.w*(Math.abs(val||0)/100),height:7,rx:3,fill:color(val),stroke:'none'},g);
+      const pc=newSvg('text',{class:'percent',x:181,y:17,'text-anchor':'end',style:'fill:'+color(val)},g);
+      pc.textContent=val===null?'—':layer==='delta'?(val>0?'+':'')+val+' pt':val+' %';
+    }
+    drawText(g,obj.name,val);
+    let down=null,moved=false;
+    g.addEventListener('pointerdown',event=>{
+      if(event.button!==0)return;
+      event.stopPropagation();event.preventDefault();
+      const rect=$('mapViewport').getBoundingClientRect(),logical=$('mapSvg').viewBox.baseVal;
+      const scaleX=logical.width/rect.width/zoom,scaleY=logical.height/rect.height/zoom;
+      down={x:event.clientX,y:event.clientY,originalX:p.x,originalY:p.y,scaleX,scaleY};
+      moved=false;g.setPointerCapture(event.pointerId);g.classList.add('is-dragging');
+    });
+    g.addEventListener('pointermove',event=>{
+      if(!down)return;
+      const dx=(event.clientX-down.x)*down.scaleX,dy=(event.clientY-down.y)*down.scaleY;
+      if(Math.abs(dx)>3||Math.abs(dy)>3)moved=true;
+      if(moved){
+        db.positions[obj.id]={x:Math.round(Math.max(5,down.originalX+dx)),y:Math.round(Math.max(5,down.originalY+dy))};
+        // redraw edges and pools as a whole on pointermove; manual position is in the shared DB
+        renderMap();
+      }
+    });
+    g.addEventListener('pointerup',event=>{
+      if(!down)return;
+      try{g.releasePointerCapture(event.pointerId)}catch{}
+      down=null;
+      if(moved){touch()}else{selected=obj.id;renderMap();renderDetail()}
+    });
+    g.addEventListener('pointercancel',()=>{down=null});
+    g.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();selected=obj.id;renderMap();renderDetail()}});
+  }
+  $('mapCount').textContent=db.domains.length+' domaines · '+db.domains.reduce((n,o)=>n+o.parents.length,0)+' dépendances';
+  $('zoomIndicator').textContent=Math.round(zoom*100)+' %';
+  $('legend').innerHTML=layer==='structure'?'Structure physique et métier · Cliquez sur un pool pour afficher son périmètre.':layer==='coverage'?[[null,'Non renseigné'],[0,'0 – 24 %'],[25,'25 – 49 %'],[50,'50 – 79 %'],[80,'80 – 100 %']].map(([n,l])=>'<span><i style="background:'+color(n)+'"></i>'+l+'</span>').join(''):'Évolution depuis le jalon précédent, exprimée en points';
+}
+function renderDetail(){let o=db.domains.find(x=>x.id===selected);if(!o){$('detail').innerHTML='<div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div>';return}let m=db.milestones.filter(x=>x.domainId===o.id).sort((a,b)=>a.date.localeCompare(b.date));let value=percent(o.id);$('detail').innerHTML='<div class="detail-head"><div><h2>'+esc(o.name)+'</h2><p>'+esc(o.description||'Aucune description renseignée')+'</p></div><button class="btn secondary" id="editSelected">Administrer ce domaine</button></div><div class="details-grid"><div><div class="big-percent">'+(value===null?'—':value+' %')+'</div><small>Couverture au '+esc(date)+'</small><p class="muted">'+esc(o.parents.map(id=>db.domains.find(x=>x.id===id)?.name||id).join(' · ')||'Domaine autonome')+'</p></div><div><b>Trajectoire de couverture</b><div class="mini-timeline" style="margin-top:10px">'+(m.length?m.map(x=>'<span><b>'+x.value+' %</b><small>'+esc(x.date)+(x.date>today()?' · prévu':'')+'</small>'+esc(x.note)+'</span>').join(''):'<span>Aucun jalon de couverture enregistré.</span>')+'</div></div></div>';$('editSelected').onclick=()=>{go('admin');openAdminTab('domains');editDomain(o.id);$('milestoneDomain').value=o.id;renderMilestones()}}
 function renderMilestones(){const id=$('milestoneDomain').value;const ms=db.milestones.filter(m=>m.domainId===id).sort((a,b)=>b.date.localeCompare(a.date));$('milestoneList').innerHTML='<div class="item-list">'+(ms.length?ms.map(m=>'<div class="item"><div><b>'+m.value+' % · '+esc(m.date)+'</b><small>'+esc(m.note)+(m.date>today()?' · Prévision':'')+'</small></div><button class="danger" data-remove="'+esc(m.id)+'">Supprimer</button></div>').join(''):'<p class="muted">Aucun jalon enregistré.</p>')+'</div>';document.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>{if(!confirm('Supprimer ce jalon ?'))return;db.milestones=db.milestones.filter(m=>m.id!==b.dataset.remove);touch()})}
 function renderTable(){$('domainTable').innerHTML='<div class="item-list">'+db.domains.map(d=>'<div class="item"><div><button class="link-btn" data-edit="'+esc(d.id)+'">'+esc(d.name)+'</button><small>'+d.parents.length+' dépendance(s) · '+db.milestones.filter(m=>m.domainId===d.id).length+' jalon(s)</small></div><strong>'+(percent(d.id)??'—')+' %</strong></div>').join('')+'</div>';document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editDomain(b.dataset.edit))}
 function editDomain(id){const d=db.domains.find(x=>x.id===id);if(!d)return;$('domainId').value=d.id;$('domainName').value=d.name;$('domainDescription').value=d.description;options($('domainParents'),false,id);[...$('domainParents').options].forEach(o=>o.selected=d.parents.includes(o.value));$('deleteDomain').hidden=false;window.scrollTo({top:0,behavior:'smooth'})}
 function resetDomain(){$('domainForm').reset();$('domainId').value='';$('deleteDomain').hidden=true;options($('domainParents'))}
 function render(){dateControls();populate();const vals=db.domains.map(x=>percent(x.id)).filter(x=>x!==null);$('totalDomains').textContent=db.domains.length;$('avgCoverage').textContent=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length)+' %':'—';$('matureDomains').textContent=db.domains.filter(x=>percent(x.id)!==null&&percent(x.id)>=80).length;$('totalMilestones').textContent=db.milestones.length;renderTable();renderMilestones();renderDetail();renderMap();status()}
-$('domainForm').onsubmit=e=>{e.preventDefault();const id=$('domainId').value||uid();const parents=[...$('domainParents').selectedOptions].map(x=>x.value);const obj={id,name:$('domainName').value.trim(),description:$('domainDescription').value.trim(),parents};if(!obj.name)return;try{const proposed={...db,domains:$('domainId').value?db.domains.map(d=>d.id===id?obj:d):[...db.domains,obj]};db=valid(proposed);resetDomain();touch()}catch(err){alert(err.message)}};
+$('domainForm').onsubmit=e=>{e.preventDefault();const id=$('domainId').value||uid();const parents=[...$('domainParents').selectedOptions].map(x=>x.value);const obj={id,name:$('domainName').value.trim(),description:$('domainDescription').value.trim(),parents};if(!obj.name)return;try{const proposed={...db,domains:$('domainId').value?db.domains.map(d=>d.id===id?obj:d):[...db.domains,obj]};db=valid(proposed);resetDomain();touch();writeNotice(linkedHtmlHandle?'Domaine enregistré dans le fichier HTML.':'Domaine modifié. Pour autoriser la sauvegarde, utilisez le bouton Enregistrer dans Administration.')}catch(err){alert(err.message)}};
 $('resetDomain').onclick=resetDomain;
-$('deleteDomain').onclick=()=>{const id=$('domainId').value;if(!id)return;const children=db.domains.filter(d=>d.parents.includes(id));if(children.length){alert('Supprimez d’abord les dépendances de : '+children.map(d=>d.name).join(', '));return}if(!confirm('Supprimer ce domaine et tous ses jalons ?'))return;db.domains=db.domains.filter(d=>d.id!==id);db.milestones=db.milestones.filter(m=>m.domainId!==id);selected=null;resetDomain();touch()};
-$('milestoneForm').onsubmit=e=>{e.preventDefault();const domainId=$('milestoneDomain').value,day=$('milestoneDate').value,value=Number($('milestoneValue').value);if(!domainId||!day||!Number.isFinite(value)||value<0||value>100){alert('Valeurs invalides');return}const prior=db.milestones.find(m=>m.domainId===domainId&&m.date===day);if(prior){prior.value=value;prior.note=$('milestoneNote').value}else db.milestones.push({id:uid(),domainId,date:day,value,note:$('milestoneNote').value});date=day;touch();writeNotice(linkedHtmlHandle?'Jalon modifié : sauvegarde automatique dans le HTML en cours…':'Jalon ajouté à la session. Cliquez sur « Enregistrer » en haut de page pour le conserver dans le HTML.')};
+$('deleteDomain').onclick=()=>{const id=$('domainId').value;if(!id)return;const children=db.domains.filter(d=>d.parents.includes(id));if(children.length){alert('Supprimez d’abord les dépendances de : '+children.map(d=>d.name).join(', '));return}if(!confirm('Supprimer ce domaine et tous ses jalons ?'))return;db.domains=db.domains.filter(d=>d.id!==id);db.milestones=db.milestones.filter(m=>m.domainId!==id);delete db.positions[id];selected=null;resetDomain();touch()};
+$('milestoneForm').onsubmit=e=>{e.preventDefault();const domainId=$('milestoneDomain').value,day=$('milestoneDate').value,value=Number($('milestoneValue').value);if(!domainId||!day||!Number.isFinite(value)||value<0||value>100){alert('Valeurs invalides');return}const prior=db.milestones.find(m=>m.domainId===domainId&&m.date===day);if(prior){prior.value=value;prior.note=$('milestoneNote').value}else db.milestones.push({id:uid(),domainId,date:day,value,note:$('milestoneNote').value});date=day;touch();writeNotice(linkedHtmlHandle?'Jalon enregistré : synchronisation du fichier HTML en cours…':'Jalon enregistré dans la session. Pour le conserver, utilisez Enregistrer dans Administration.')};
 $('milestoneDomain').onchange=renderMilestones;
 $('filter').oninput=e=>{filter=e.target.value.toLowerCase().trim();renderMap()};
 $('groupFilter').onchange=e=>{focus=e.target.value;renderMap()};
@@ -232,6 +378,19 @@ async function verifyAccess(handle){
 }
 
 function sameData(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function mergePositions(base,local,remote){
+  const output={};
+  for(const id of new Set([...Object.keys(base),...Object.keys(local),...Object.keys(remote)])){
+    const orig=base[id],mine=local[id],theirs=remote[id];
+    const mineChanged=JSON.stringify(mine)!==JSON.stringify(orig);
+    const theirsChanged=JSON.stringify(theirs)!==JSON.stringify(orig);
+    if(mineChanged&&theirsChanged&&JSON.stringify(mine)!==JSON.stringify(theirs))
+      throw Error('Conflit de placement pour '+id+'.');
+    const chosen=mineChanged?mine:theirs;
+    if(chosen)output[id]=chosen;
+  }
+  return output;
+}
 function mergeThreeWay(base,local,remote){
   const mergeSet=(type,oldItems,localItems,remoteItems,keyFn)=>{
     const old=new Map(oldItems.map(x=>[keyFn(x),x]));
@@ -252,6 +411,7 @@ function mergeThreeWay(base,local,remote){
   return valid({version:1,
     domains:mergeSet('le domaine',base.domains,local.domains,remote.domains,x=>x.id),
     milestones:mergeSet('le jalon',base.milestones,local.milestones,remote.milestones,x=>x.domainId+'|'+x.date),
+    positions:mergePositions(base.positions||{},local.positions||{},remote.positions||{}),
     updatedAt:new Date().toISOString()});
 }
 function queueHtmlAutoSave(){
@@ -287,7 +447,8 @@ async function saveHtmlSameFile(options={}){
     const local=structuredClone(db),serial=editSerial;
     const diverged=disk.revision!==currentRevision ||
       !sameData(remote.domains,persistedState.domains) ||
-      !sameData(remote.milestones,persistedState.milestones);
+      !sameData(remote.milestones,persistedState.milestones) ||
+      !sameData(remote.positions||{},persistedState.positions||{});
     const proposed=diverged?mergeThreeWay(persistedState,local,remote):local;
     if(!dirty){
       db=remote;persistedState=structuredClone(remote);currentRevision=disk.revision;
