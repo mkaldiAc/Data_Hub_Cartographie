@@ -249,6 +249,10 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 @media(max-width:1000px){.business-admin-layout{grid-template-columns:1fr}}
 @media(max-width:720px){.business-row{grid-template-columns:1fr 75px;gap:6px}.business-row .business-meter,.business-row .business-details{grid-column:1/-1}.business-score{justify-content:flex-end}}
 
+
+/* Interception des sélections pendant les glissements, y compris le SVG. */
+#mapViewport,#mapViewport *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important}
+#mapViewport svg text{user-select:none!important;-webkit-user-select:none!important;pointer-events:none!important}
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
@@ -527,6 +531,100 @@ function renderMap(){
   $('zoomInput').value=String(Number((zoom*100).toFixed(1)));
   $('legend').innerHTML=layer==='structure'?'Domaines et dépendances':layer==='coverage'?[0,25,50,75,100].map(n=>'<span><i style="background:'+color(n)+';border:1px solid #b9cbdc"></i>'+n+' %</span>').join('')+'<span>□ Non renseigné</span>':'Évolution en points depuis le dernier jalon';
 }
+
+function businessMaturity(entry,at=date){
+ const values=entry.domainIds.map(id=>percent(id,at));
+ const available=values.filter(v=>v!==null);
+ return {value:available.length?available.reduce((a,b)=>a+b,0)/available.length:null,
+   available:available.length,total:entry.domainIds.length};
+}
+function renderBusinessList(){
+ const list=$('businessList');
+ const groups=new Map();
+ for(const entry of db.businessResponses||[]){
+  if(!groups.has(entry.direction))groups.set(entry.direction,[]);
+  groups.get(entry.direction).push(entry);
+ }
+ list.innerHTML=groups.size?[...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0],'fr')).map(([direction,entries])=>
+  '<h3 class="business-list-direction">'+esc(direction)+'</h3>'+
+  entries.sort((a,b)=>a.name.localeCompare(b.name,'fr')).map(entry=>
+   '<div class="business-list-item"><div><div class="name">'+esc(entry.name)+'</div><small>'+entry.domainIds.length+' domaine(s) affecté(s)</small></div>'+
+   '<button class="btn secondary" type="button" data-business-edit="'+esc(entry.id)+'">Modifier</button></div>').join('')
+ ).join(''):'<p class="muted">Aucun métier créé.</p>';
+ list.querySelectorAll('[data-business-edit]').forEach(button=>button.onclick=()=>editBusiness(button.dataset.businessEdit));
+ const current=$('businessId').value;
+ const select=$('businessDomains');
+ const chosen=[...select.selectedOptions].map(o=>o.value);
+ select.innerHTML=db.domains.map(d=>'<option value="'+esc(d.id)+'">'+esc(d.name)+'</option>').join('');
+ const entry=db.businessResponses.find(x=>x.id===current);
+ const selectedIds=entry?.domainIds||chosen;
+ [...select.options].forEach(opt=>opt.selected=selectedIds.includes(opt.value));
+ $('directionsList').innerHTML=[...groups.keys()].sort((a,b)=>a.localeCompare(b,'fr')).map(x=>'<option value="'+esc(x)+'"></option>').join('');
+}
+function resetBusiness(){
+ $('businessForm').reset();$('businessId').value='';
+ $('deleteBusiness').hidden=true;
+ [...$('businessDomains').options].forEach(opt=>opt.selected=false);
+ $('saveBusiness').textContent='Enregistrer le métier';
+}
+function editBusiness(id){
+ const entry=(db.businessResponses||[]).find(x=>x.id===id);if(!entry)return;
+ $('businessId').value=entry.id;
+ $('businessDirection').value=entry.direction;
+ $('businessName').value=entry.name;
+ [...$('businessDomains').options].forEach(opt=>opt.selected=entry.domainIds.includes(opt.value));
+ $('deleteBusiness').hidden=false;
+ $('saveBusiness').textContent='Mettre à jour le métier';
+ $('businessForm').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+$('businessForm').onsubmit=e=>{
+ e.preventDefault();
+ const id=$('businessId').value||uid();
+ const direction=$('businessDirection').value.trim(),name=$('businessName').value.trim();
+ const domainIds=[...$('businessDomains').selectedOptions].map(o=>o.value);
+ try{
+  const item={id,direction,name,domainIds};
+  const next=db.businessResponses.some(x=>x.id===id)
+   ?db.businessResponses.map(x=>x.id===id?item:x):[...db.businessResponses,item];
+  db=valid({...db,businessResponses:next});
+  resetBusiness();touch();
+  if(!linkedHtmlHandle)writeNotice('Métier enregistré dans la session. Utilisez « Enregistrer le HTML » pour le conserver.');
+ }catch(error){alert(error.message)}
+};
+$('resetBusiness').onclick=resetBusiness;
+$('deleteBusiness').onclick=()=>{
+ const id=$('businessId').value;if(!id||!confirm('Supprimer ce métier et ses affectations de domaines ?'))return;
+ db.businessResponses=db.businessResponses.filter(x=>x.id!==id);
+ resetBusiness();touch();
+};
+$('manageBusiness').onclick=()=>{go('admin');openAdminTab('business')};
+function renderBusinessAnalysis(){
+ const el=$('businessAnalysis'),entries=db.businessResponses||[];
+ if(!entries.length){
+  el.innerHTML='<div class="business-empty">Aucune réponse métier définie. Utilisez « Gérer les métiers » pour associer des domaines aux directions et métiers.</div>';
+  return;
+ }
+ const groups=new Map();
+ for(const entry of entries){if(!groups.has(entry.direction))groups.set(entry.direction,[]);groups.get(entry.direction).push(entry)}
+ const fmt=n=>n===null?'—':Math.round(n)+' %';
+ const bar=n=>n===null?0:Math.max(0,Math.min(100,n));
+ const meter=n=>'<span class="business-meter"><span style="width:'+bar(n).toFixed(2)+'%"></span></span>';
+ el.innerHTML=[...groups.entries()].sort((a,b)=>a[0].localeCompare(b[0],'fr')).map(([direction,items])=>{
+  const stats=items.map(entry=>({entry,...businessMaturity(entry)}));
+  // La direction est la moyenne des scores métiers renseignés, sans pondération
+  // implicite par le nombre de domaines. Chaque métier pèse autant.
+  const known=stats.filter(x=>x.value!==null);
+  const avg=known.length?known.reduce((sum,x)=>sum+x.value,0)/known.length:null;
+  return '<section class="business-direction"><div class="business-direction-header"><div><h3>'+esc(direction)+'</h3><small>'+items.length+' métier(s) · '+known.length+' évalué(s)</small></div>'+
+   '<div class="business-score">'+meter(avg)+'<strong>'+fmt(avg)+'</strong></div></div>'+
+   '<div class="business-rows">'+stats.sort((a,b)=>a.entry.name.localeCompare(b.entry.name,'fr')).map(st=>
+     '<div class="business-row"><strong>'+esc(st.entry.name)+'</strong>'+
+     '<div class="business-score"><strong>'+fmt(st.value)+'</strong></div>'+
+     meter(st.value)+'<span class="business-details">'+st.available+' / '+st.total+' domaines renseignés</span></div>'
+   ).join('')+'</div></section>';
+ }).join('');
+}
+
 function renderDetail(){let o=db.domains.find(x=>x.id===selected);if(!o){$('detail').innerHTML='<div class="empty-detail">Sélectionnez un domaine dans la carte pour consulter son historique et ses jalons.</div>';return}let m=db.milestones.filter(x=>x.domainId===o.id).sort((a,b)=>a.date.localeCompare(b.date));let value=percent(o.id);$('detail').innerHTML='<div class="detail-head"><div><h2>'+esc(o.name)+'</h2><p>'+esc(o.description||'Aucune description renseignée')+'</p></div><button class="btn secondary" id="editSelected">Administrer ce domaine</button></div><div class="details-grid"><div><div class="big-percent">'+(value===null?'—':value+' %')+'</div><small>Couverture au '+esc(date)+'</small><p class="muted">'+esc(o.parents.map(id=>db.domains.find(x=>x.id===id)?.name||id).join(' · ')||'Domaine autonome')+'</p></div><div><b>Trajectoire de couverture</b><div class="mini-timeline" style="margin-top:10px">'+(m.length?m.map(x=>'<span><b>'+x.value+' %</b><small>'+esc(x.date)+(x.date>today()?' · prévu':'')+'</small>'+esc(x.note)+'</span>').join(''):'<span>Aucun jalon de couverture enregistré.</span>')+'</div></div></div>';$('editSelected').onclick=()=>{go('admin');openAdminTab('domains');editDomain(o.id)}}
 function renderTable(){
  $('domainTable').innerHTML='<div class="item-list">'+db.domains.map(d=>
@@ -701,7 +799,16 @@ document.addEventListener('keydown',e=>{
  }
 });
 
-const viewport=$('mapViewport');viewport.addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.12:.89))},{passive:false});
+const viewport=$('mapViewport');
+viewport.addEventListener('selectstart',event=>{event.preventDefault()},true);
+viewport.addEventListener('dragstart',event=>{event.preventDefault()},true);
+viewport.addEventListener('pointerdown',event=>{
+ if(event.button!==0)return;
+ event.preventDefault();
+ const selection=document.getSelection?.();
+ selection?.removeAllRanges();
+},true);
+viewport.addEventListener('wheel',e=>{e.preventDefault();setZoom(zoom*(e.deltaY<0?1.12:.89))},{passive:false});
 function screenSvgScale(){
   const rect=$('mapSvg').getBoundingClientRect(),v=$('mapSvg').viewBox.baseVal;
   return Math.min(rect.width/v.width,rect.height/v.height);
