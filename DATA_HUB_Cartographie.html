@@ -181,14 +181,14 @@ const referenceLayout=[
 ['Contentieux CSR',1770,1125]
 ];
 function positions(){
-  const pos=new Map(),initial=new Map(referenceLayout);
+  const pos=new Map(),initial=new Map(referenceLayout.map(([name,x,y])=>[name,{x,y}]));
   const width=2160,height=1400;
   const current=db.positions||{};
   const columnSize=245,rowSize=112;
   const newcomers=db.domains.filter(o=>!initial.has(o.name));
   for(const [i,o] of db.domains.entries()){
     const ref=initial.get(o.name);
-    const fallback=ref||[300+(i%6)*columnSize,1200+Math.floor(i/6)*rowSize];
+    const fallback=ref?[ref.x,ref.y]:[300+(i%6)*columnSize,1200+Math.floor(i/6)*rowSize];
     const p=current[o.id]||{x:fallback[0],y:fallback[1]};
     pos.set(o.id,{x:p.x,y:p.y,w:198,h:66});
   }
