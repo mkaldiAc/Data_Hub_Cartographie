@@ -229,3 +229,11 @@ Les événements natifs `selectstart` et `dragstart` sont annulés dans le conte
 ### Audit
 
 Validations réalisées dans le moteur JavaScript : compilation, migration v1→v2, export/import du modèle v2, refus des références de domaines absentes, moyenne de deux couvertures (60 et 80 → 70), moyenne partielle si un domaine est non renseigné (60 et inconnu → 60), absence de références DOM manquantes. Le parcours d'écriture via File System Access et le test de sélection pendant le glissement demandent encore un test physique dans Chrome.
+
+## Analyse métier : domaines et navigation contextuelle
+
+Dans le bloc **Maturité de la réponse métier**, chaque métier indique les deux premiers domaines affectés sous forme de petites étiquettes. Si plus de deux domaines sont rattachés, un bouton discret `+N domaines` permet de développer uniquement la ligne correspondante. Les noms affichés proviennent des identifiants des domaines et suivent donc les renommages.
+
+Un clic sur la ligne d'un **métier** met en évidence ses domaines directement affectés et leurs dépendances structurelles amont, puis recadre la carte sur cet ensemble. Un clic sur une **direction** prend l'union des domaines affectés à tous ses métiers. Les pools hors périmètre sont atténués ; les chemins de dépendance sont rehaussés. Le bouton **✕ Vue métier** dans les commandes de carte efface le focus et restaure la vue complète. La sélection n'est qu'un état d'affichage : elle n'est pas enregistrée dans le JSON et ne modifie pas les positions.
+
+Audit du modèle réalisé : métier test utilisant `d9` et `d10`, sélection directe correcte, dépendances amont retrouvées ; direction test regroupant plusieurs métiers, union correcte ; compilation JavaScript et absence de références DOM manquantes. Le clic et le recentrage sont à vérifier visuellement dans Chrome.
