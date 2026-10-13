@@ -99,3 +99,9 @@ Le fichier [DATA_HUB_Cartographie.html](./DATA_HUB_Cartographie.html) embarque l
 - Les copies enregistrées contiennent également le code applicatif : ne partagez que des fichiers provenant d'une source maîtrisée. Le destinataire doit ouvrir le HTML en tant que fichier local (Teams peut bloquer la prévisualisation du HTML).
 
 La version multi-fichiers et sa compatibilité Docker sont conservées pour les développements ultérieurs.
+
+### Correctif Chrome — 13 octobre 2026
+
+La sauvegarde HTML autonome a été corrigée : lorsque le document sélectionné possède une révision différente, l'application tente désormais une **fusion à trois versions** des domaines et jalons au lieu de refuser systématiquement. Les conflits sur le même domaine ou la même paire domaine/date restent bloquants. Après la première autorisation du fichier HTML, la saisie de jalons et l'édition des domaines déclenchent une sauvegarde automatique différée (600 ms). Les modifications avant cette première autorisation restent en mémoire tant que l'utilisateur n'a pas cliqué sur **Enregistrer**. Un indicateur en haut de page permet de distinguer l'état enregistré de l'état non enregistré.
+
+**Important :** le correctif est validé par compilation syntaxique du script et par tests de la fusion et de sa protection contre les conflits. La boîte de dialogue et l'écriture dans Chrome sur le PC utilisateur restent à tester. Une copie HTML antérieure ne se met pas à jour automatiquement : retéléchargez le fichier depuis le dépôt avant le nouveau test.
