@@ -426,6 +426,12 @@ const dayNumber=d=>Math.floor(Date.parse(d+'T00:00:00Z')/86400000);
 const dayLabel=d=>d.split('-').reverse().join('/');
 const nearestDate=(day,list)=>list.reduce((a,b)=>Math.abs(dayNumber(b)-day)<Math.abs(dayNumber(a)-day)?b:a,list[0]);
 const matrixDrafts=new Map();let layoutPending=false;
+function mapViewSnapshot(){return {zoom,panX,panY,layer,observationDate:date}}
+function applyMapView(){const v=db.mapView;if(!v)return;zoom=v.zoom;panX=v.panX;panY=v.panY;layer=v.layer;date=v.observationDate||today();document.querySelectorAll('[data-layer]').forEach(b=>b.classList.toggle('active',b.dataset.layer===layer))}
+function exportSnapshot(){
+ if(matrixDrafts.size)throw Error('Des taux de couverture sont encore en cours de saisie. Cliquez sur « Enregistrer les couvertures » avant l’export.');
+ return valid({...db,mapView:mapViewSnapshot()});
+}
 function touch({autoSave=true}={}){db.updatedAt=new Date().toISOString();dirty=true;editSerial++;status();render();if(autoSave)queueHtmlAutoSave()}
 function status(){$('storageStatus').textContent=(fileHandle?'● Dossier lié':'● Mode local')+(dirty?' · modifications à enregistrer':'');$('storageInfo').textContent=fileHandle?'Fichier lié : '+fileHandle.name+(dirty?' — modifications non enregistrées dans le dossier.':' — enregistré.'):'Aucun fichier Teams lié. Les modifications sont conservées uniquement dans ce navigateur. Exportez-les ou liez un fichier JSON.'}
 function go(next){view=next;for(const v of ['map','admin','storage']){$(v+'Page').hidden=v!==next;document.querySelector('[data-view="'+v+'"]')?.classList.toggle('active',v===next)}$('pageTitle').textContent=({map:'Cartographie des domaines',admin:'Administration du référentiel',storage:'Partage et stockage'})[next];$('pageDesc').textContent=({map:'Une vision partagée de la cible, du réalisé et de la trajectoire.',admin:'Gérer les domaines, leurs dépendances et les objectifs dans le temps.',storage:'Connecter un fichier JSON hébergé dans votre dossier Teams synchronisé.'})[next];$('adminActions').hidden=next!=='admin';if(next==='map')renderMap()}
@@ -1034,8 +1040,8 @@ $('mapBackgroundPicker').addEventListener('input',event=>{
  if(event.target.value===db.mapBackground)return;
  db.mapBackground=event.target.value;layoutPending=true;touch({autoSave:false});
 });viewport.addEventListener('pointercancel',()=>{nodeDrag=null;drag=null;renderMap()});
-function download(){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.href=url;a.download='data-hub-cartographie.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-$('exportButton').onclick=download;
+function download(){const data=exportSnapshot();const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.href=url;a.download='data-hub-cartographie.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$('exportButton').onclick=()=>{try{download()}catch(err){alert(err.message)}};
 const supported=()=>!!window.showOpenFilePicker&&!!window.showSaveFilePicker;
 async function loadHandle(h){const f=await h.getFile(),raw=JSON.parse(await f.text()),loaded=valid(raw);if(dirty&&!confirm('Remplacer les modifications locales non enregistrées ?'))return;db=loaded;fileHandle=h;dirty=false;selected=null;render();go('map')}
 $('openShared').onclick=async()=>{if(!supported()){alert('Utilisez Microsoft Edge ou Chrome en contexte sécurisé (localhost ou HTTPS). Sinon importez/exportez un fichier JSON.');return}try{const [h]=await showOpenFilePicker({types:[{description:'Fichiers JSON',accept:{'application/json':['.json']}}]});if(h)await loadHandle(h)}catch(e){if(e.name!=='AbortError')alert(e.message)}};
@@ -1067,7 +1073,7 @@ $('importFile').onchange=async e=>{
   if(!confirm(msg)){info.textContent='Import annulé : les données courantes sont conservées.';return}
   db=candidate;
   matrixDrafts.clear();
-  selected=null;date=today();layoutPending=true;
+  selected=null;date=today();applyMapView();layoutPending=true;
   resetDomain();
   touch({autoSave:false});
   info.textContent='Import validé : '+db.domains.length+' domaines et '+db.statementDates.length+' dates restaurés. Enregistrement dans le HTML en cours…';
@@ -1079,7 +1085,7 @@ $('importFile').onchange=async e=>{
  }finally{e.target.value=''}
 };
 // Ancien champ milestoneDate supprimé avec la migration de la matrice.
-resetDomain();render();go('map');fit();
+resetDomain();applyMapView();render();go('map');if(!db.mapView)fit();
 
 
 /* Sauvegarde du document HTML autonome : API File System Access. */
@@ -1114,7 +1120,7 @@ function serializeHtmlDocument(revision,payload=db){
   const template=window.__dataHubTemplate;
   if(!template)throw Error('Modèle HTML indisponible.');
   const marker=extractHtmlPayload(template);
-  const packed=JSON.stringify({...payload,revision}).replace(/</g,'\\u003c').replace(/\\u2028/g,'\\u2028').replace(/\\u2029/g,'\\u2029');
+  const packed=JSON.stringify({...payload,mapView:mapViewSnapshot(),revision}).replace(/</g,'\\u003c').replace(/\\u2028/g,'\\u2028').replace(/\\u2029/g,'\\u2029');
   return template.slice(0,marker.start)+packed+template.slice(marker.stop);
 }
 function exportHtmlDownload(source){
@@ -1144,6 +1150,7 @@ async function verifyAccess(handle){
 }
 
 function sameData(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function mergeMapView(base,local,remote){const b=base??null,l=local??null,r=remote??null;const lc=!sameData(l,b),rc=!sameData(r,b);if(lc&&rc&&!sameData(l,r))throw Error('Conflit sur le cadrage et le zoom de la cartographie.');return lc?l:r}
 function mergeBackground(base,local,remote){const lc=local!==base,rc=remote!==base;if(lc&&rc&&local!==remote)throw Error('Conflit sur le fond de carte.');return lc?local:remote}
 function mergePositions(base,local,remote){
   const output={};
@@ -1175,12 +1182,13 @@ function mergeThreeWay(base,local,remote){
     }
     return out;
   };
-  return valid({...remote,version:2,
+  return valid({...remote,version:3,
     domains:mergeSet('le domaine',base.domains,local.domains,remote.domains,x=>x.id),
     businessResponses:mergeSet('le métier',base.businessResponses||[],local.businessResponses||[],remote.businessResponses||[],x=>x.id),
     milestones:mergeSet('le jalon',base.milestones,local.milestones,remote.milestones,x=>x.domainId+'|'+x.date),
     positions:mergePositions(base.positions||{},local.positions||{},remote.positions||{}),
     mapBackground:mergeBackground(base.mapBackground||'#ffffff',local.mapBackground||'#ffffff',remote.mapBackground||'#ffffff'),
+    mapView:mergeMapView(base.mapView,local.mapView,remote.mapView),
     statementDates:[...new Set([...(local.statementDates||[]),...(remote.statementDates||[])])].sort(),
     updatedAt:new Date().toISOString()});
 }
@@ -1226,14 +1234,16 @@ async function performHtmlSave(options={}){
     await verifyAccess(linkedHtmlHandle);
     const disk=extractHtmlPayload(await(await linkedHtmlHandle.getFile()).text());
     const remote=disk.payload.bootstrap===true?sample():valid(disk.payload);
-    const local=structuredClone(db),serial=editSerial;
+    const local=structuredClone({...db,mapView:mapViewSnapshot()}),serial=editSerial;
     const diverged=disk.revision!==currentRevision ||
       !sameData(remote.domains,persistedState.domains) ||
+      !sameData(remote.businessResponses||[],persistedState.businessResponses||[]) ||
+      !sameData(remote.mapView||null,persistedState.mapView||null) ||
       !sameData(remote.milestones,persistedState.milestones) ||
       !sameData(remote.positions||{},persistedState.positions||{}) || !sameData(remote.statementDates||[],persistedState.statementDates||[]) || (remote.mapBackground||'#ffffff')!==(persistedState.mapBackground||'#ffffff');
     const proposed=diverged?mergeThreeWay(persistedState,local,remote):local;
     if(!dirty){
-      db=remote;persistedState=structuredClone(remote);currentRevision=disk.revision;
+      db=remote;persistedState=structuredClone(remote);currentRevision=disk.revision;applyMapView();
       render();
       writeNotice(diverged?'Version du fichier sélectionné chargée. Vous pouvez désormais la modifier.':'Fichier associé. Toute modification sera automatiquement sauvegardée.');
       return;
@@ -1255,7 +1265,7 @@ async function performHtmlSave(options={}){
 }
 async function saveHtmlCopy(){
   const nextRevision=uid();
-  const contents=serializeHtmlDocument(nextRevision);
+  const contents=serializeHtmlDocument(nextRevision,exportSnapshot());
   try{
     if(typeof window.showSaveFilePicker==='function'){
       const handle=await window.showSaveFilePicker({
