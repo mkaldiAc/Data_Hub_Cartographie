@@ -237,3 +237,25 @@ Dans le bloc **Maturité de la réponse métier**, chaque métier indique les de
 Un clic sur la ligne d'un **métier** met en évidence ses domaines directement affectés et leurs dépendances structurelles amont, puis recadre la carte sur cet ensemble. Un clic sur une **direction** prend l'union des domaines affectés à tous ses métiers. Les pools hors périmètre sont atténués ; les chemins de dépendance sont rehaussés. Le bouton **✕ Vue métier** dans les commandes de carte efface le focus et restaure la vue complète. La sélection n'est qu'un état d'affichage : elle n'est pas enregistrée dans le JSON et ne modifie pas les positions.
 
 Audit du modèle réalisé : métier test utilisant `d9` et `d10`, sélection directe correcte, dépendances amont retrouvées ; direction test regroupant plusieurs métiers, union correcte ; compilation JavaScript et absence de références DOM manquantes. Le clic et le recentrage sont à vérifier visuellement dans Chrome.
+
+## Audit complet de l'import / export JSON — 14 octobre 2026
+
+**Périmètre : uniquement `Data_Hub_Cartographie`.** Le schéma courant est **v3** ; les exports v1 et v2 demeurent acceptés et sont migrés lors du chargement.
+
+Le JSON exporté inclut désormais :
+- `domains` : identifiants, noms, descriptions et dépendances parentales ;
+- `businessResponses` : directions, métiers et associations aux domaines ;
+- `milestones` : dates, pourcentages et commentaires ;
+- `statementDates` : dates de constat, même sans pourcentage ;
+- `positions` : emplacement X/Y de chaque cartouche ;
+- `mapBackground` : fond de carte ;
+- `mapView` : zoom, translation horizontale/verticale, calque actif et date affichée ;
+- `updatedAt` et `version`, et les propriétés inconnues déjà présentes.
+
+**Import :** validation avant toute mutation ; un ID de domaine manquant ou une dépendance circulaire, un métier mal référencé, un jalon en doublon, une couleur, position ou vue invalide entraînent un refus explicite. Les propriétés supplémentaires des objets métier et domaine sont préservées. Une copie de sécurité du référentiel précédent est proposée au téléchargement avant confirmation du remplacement. Une fois l'import accepté, les données sont chargées et l'enregistrement HTML doit être **explicitement lancé** avec `Enregistrer le HTML` ; il remplace alors volontairement le référentiel sans le fusionner avec l'ancien état du HTML. Il faut attendre la confirmation de la sauvegarde avant de fermer la page.
+
+**Export :** toute saisie de pourcentage non validée dans la matrice empêche l'export avec un message d'erreur, afin d'éviter un JSON incomplet. Les paramètres de vue au moment de l'export sont ajoutés au JSON.
+
+**Sauvegarde HTML :** l'option `Enregistrer la carte` et `Enregistrer le HTML` prend désormais en compte zoom/cadrage/calque/date ; les changements de métier sont vérifiés dans la détection de divergence ; le modèle prend en compte `mapView` dans les fusions. Le focus métier est un choix temporaire de consultation, pas un paramètre persistant.
+
+**Contrôles automatisés exécutés :** compilation JS, migration v1 et v2 vers v3, aller-retour JSON avec 35 domaines, métier multi-domaines, jalon, dates, coordonnées négatives, couleur et vue, refus de quatre données malformées, vérification de l'ensemble des références DOM. Un test d'interaction avec la boîte de dialogue de fichiers Chrome reste nécessaire sur Windows.
