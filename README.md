@@ -259,3 +259,9 @@ Le JSON exporté inclut désormais :
 **Sauvegarde HTML :** l'option `Enregistrer la carte` et `Enregistrer le HTML` prend désormais en compte zoom/cadrage/calque/date ; les changements de métier sont vérifiés dans la détection de divergence ; le modèle prend en compte `mapView` dans les fusions. Le focus métier est un choix temporaire de consultation, pas un paramètre persistant.
 
 **Contrôles automatisés exécutés :** compilation JS, migration v1 et v2 vers v3, aller-retour JSON avec 35 domaines, métier multi-domaines, jalon, dates, coordonnées négatives, couleur et vue, refus de quatre données malformées, vérification de l'ensemble des références DOM. Un test d'interaction avec la boîte de dialogue de fichiers Chrome reste nécessaire sur Windows.
+
+### Complément d'audit — aller-retour HTML vérifié
+
+Un test exécutable a extrait le script et le JSON embarqué depuis le HTML actuel, généré en mémoire un HTML contenant une révision modifiée, puis relu ce nouveau HTML par le même parseur que l'application. Valeurs vérifiées après retour : 35 domaines, un métier, un jalon à 92 %, une position négative (-280, 91), le fond #123456 et la vue (zoom 115 %, translation X=10/Y=-20, calque couverture, date 14/10/2026). Aucun champ n'a été perdu.
+
+Le dernier chemin d'écriture JSON encore présent pour un dossier partagé utilise désormais lui aussi `exportSnapshot()`, afin d'appliquer le même contrat de données. Le retour d'expérience Chrome (autorisations de fichiers, interactions de navigation) reste une validation distincte de ces tests de sérialisation.
