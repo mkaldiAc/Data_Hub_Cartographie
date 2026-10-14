@@ -1035,7 +1035,7 @@ viewport.addEventListener('pointerup',()=>{
     else{selected=n.id;renderMap();renderDetail()}
   }
 });
-$('saveMapLayout').addEventListener('click',async()=>{if(nodeDrag)return;await saveHtmlSameFile()});
+$('saveMapLayout').addEventListener('click',async()=>{if(nodeDrag)return;db.mapView=mapViewSnapshot();touch({autoSave:false});await saveHtmlSameFile()});
 $('mapBackgroundPicker').addEventListener('input',event=>{
  if(event.target.value===db.mapBackground)return;
  db.mapBackground=event.target.value;layoutPending=true;touch({autoSave:false});
@@ -1071,14 +1071,14 @@ $('importFile').onchange=async e=>{
   download();
   const msg='Le JSON « '+file.name+' » contient '+candidate.domains.length+' domaines, '+candidate.statementDates.length+' dates et '+candidate.milestones.length+' taux. Une sauvegarde du référentiel actuel vient d’être téléchargée. Remplacer les données courantes ?';
   if(!confirm(msg)){info.textContent='Import annulé : les données courantes sont conservées.';return}
+  linkedHtmlHandle=null;fileHandle=null; // Un référentiel importé remplace la base, pas une modification de la copie précédente.
   db=candidate;
   matrixDrafts.clear();
   selected=null;date=today();applyMapView();layoutPending=true;
   resetDomain();
   touch({autoSave:false});
   info.textContent='Import validé : '+db.domains.length+' domaines et '+db.statementDates.length+' dates restaurés. Enregistrement dans le HTML en cours…';
-  if(linkedHtmlHandle){await saveHtmlSameFile({automatic:true})}
-  info.textContent=!dirty?'Import enregistré dans le HTML.':'Import chargé. Cliquez sur « Enregistrer le HTML » pour conserver ces données dans le fichier ouvert.';
+  info.textContent='Import terminé en mémoire. Cliquez sur « Enregistrer le HTML » pour écrire ce référentiel dans le fichier HTML ouvert.';
  }catch(err){
   info.textContent='Import refusé : '+err.message;
   alert('Import JSON impossible : '+err.message);
@@ -1288,7 +1288,7 @@ async function saveHtmlCopy(){
   }
 }
 
-document.getElementById('saveHtmlDirect').addEventListener('click',()=>saveHtmlSameFile());
+document.getElementById('saveHtmlDirect').addEventListener('click',()=>{db.mapView=mapViewSnapshot();touch({autoSave:false});return saveHtmlSameFile()});
 document.getElementById('saveHtmlCopy').addEventListener('click',saveHtmlCopy);
 window.addEventListener('beforeunload',event=>{
   if(dirty||matrixDrafts.size>0){event.preventDefault();event.returnValue=''}
