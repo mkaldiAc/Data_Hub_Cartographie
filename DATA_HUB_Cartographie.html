@@ -367,8 +367,17 @@ const names=[
 ['Impayés','Quittancement - relevés de comptes'],
 ['Contentieux CSR','Impayés']
 ];
-function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:2,domains,milestones:[],positions:{},statementDates:[],mapBackground:'#ffffff',businessResponses:[],updatedAt:new Date().toISOString()}}
-function valid(raw){if(!raw||typeof raw!=='object'||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');if(raw.version!==undefined&&(!Number.isInteger(Number(raw.version))||Number(raw.version)>2||Number(raw.version)<1))throw Error('Version de schéma JSON incompatible : '+raw.version);const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {id:d.id,name:d.name.slice(0,100),description:String(d.description||'').slice(0,1000),parents:d.parents}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>({id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)}));if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');const businessIds=new Set(),businessPairs=new Set();
+function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:3,domains,milestones:[],positions:{},statementDates:[],mapBackground:'#ffffff',mapView:null,businessResponses:[],updatedAt:new Date().toISOString()}}
+function valid(raw){if(!raw||typeof raw!=='object'||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');if(raw.version!==undefined&&(!Number.isInteger(Number(raw.version))||Number(raw.version)>3||Number(raw.version)<1))throw Error('Version de schéma JSON incompatible : '+raw.version);const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {...d,id:d.id,name:d.name.trim().slice(0,100),description:String(d.description||'').slice(0,1000),parents:[...d.parents]}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>{
+ if(!m||typeof m!=='object'||m.value===null||m.value===undefined||m.value===''||typeof m.value==='boolean')throw Error('Jalon sans pourcentage valide');
+ return {...m,id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)};
+});if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');
+const milestoneKeys=new Set(),milestoneIds=new Set();
+for(const m of ms){
+ const key=m.domainId+'|'+m.date;
+ if(milestoneKeys.has(key)||milestoneIds.has(m.id))throw Error('Jalon en double : '+key);
+ milestoneKeys.add(key);milestoneIds.add(m.id);
+}const businessIds=new Set(),businessPairs=new Set();
 const businessResponses=(Array.isArray(raw.businessResponses)?raw.businessResponses:[]).map(entry=>{
  if(!entry||typeof entry.id!=='string'||!entry.id.trim()||businessIds.has(entry.id))throw Error('Identifiant de métier invalide ou en double');
  if(typeof entry.direction!=='string'||!entry.direction.trim()||entry.direction.trim().length>100||typeof entry.name!=='string'||!entry.name.trim()||entry.name.trim().length>100)throw Error('Direction ou nom de métier invalide');
@@ -378,7 +387,31 @@ const businessResponses=(Array.isArray(raw.businessResponses)?raw.businessRespon
  businessPairs.add(key);businessIds.add(entry.id);
  return {...entry,id:entry.id,direction:entry.direction.trim(),name:entry.name.trim(),domainIds:[...entry.domainIds]};
 });
-const mapBackground=(typeof raw.mapBackground==='string'&&/^#[0-9a-fA-F]{6}$/.test(raw.mapBackground))?raw.mapBackground.toLowerCase():'#ffffff';const positions={};if(raw.positions&&typeof raw.positions==='object')for(const [id,p] of Object.entries(raw.positions)){if(ids.has(id)&&Number.isFinite(p?.x)&&Number.isFinite(p?.y))positions[id]={x:Math.round(p.x),y:Math.round(p.y)}}const statementDates=[...new Set([...(Array.isArray(raw.statementDates)?raw.statementDates:[]),...ms.map(m=>m.date)])].filter(d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();return {...raw,version:2,domains:ds,milestones:ms,positions,statementDates,mapBackground,businessResponses,updatedAt:raw.updatedAt||new Date().toISOString()}}
+const mapBackground=(typeof raw.mapBackground==='string'&&/^#[0-9a-fA-F]{6}$/.test(raw.mapBackground))?raw.mapBackground.toLowerCase():'#ffffff';
+if(raw.mapBackground!==undefined&&mapBackground!==raw.mapBackground?.toLowerCase())throw Error('Couleur de fond de carte invalide');
+const positions={};
+if(raw.positions!==undefined&&(raw.positions===null||typeof raw.positions!=='object'||Array.isArray(raw.positions)))throw Error('Structure des positions invalide');
+if(raw.positions)for(const [id,p] of Object.entries(raw.positions)){
+ if(!ids.has(id))continue; // Anciennes coordonnées de domaines supprimés.
+ if(!p||typeof p!=='object'||!Number.isFinite(p.x)||!Number.isFinite(p.y))throw Error('Coordonnées invalides pour '+id);
+ positions[id]={x:Math.round(p.x),y:Math.round(p.y)};
+}
+if(raw.statementDates!==undefined&&!Array.isArray(raw.statementDates))throw Error('Les dates de constat doivent être une liste');
+const rawDates=Array.isArray(raw.statementDates)?raw.statementDates:[];
+if(rawDates.some(d=>typeof d!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(d)||!Number.isFinite(Date.parse(d+'T00:00:00Z'))))throw Error('Une date de constat est invalide');
+const statementDates=[...new Set([...rawDates,...ms.map(m=>m.date)])].sort();
+let mapView=null;
+if(raw.mapView!==undefined&&raw.mapView!==null){
+ const v=raw.mapView;
+ if(typeof v!=='object'||Array.isArray(v)||!Number.isFinite(v.zoom)||v.zoom<.05||v.zoom>5||
+   !Number.isFinite(v.panX)||!Number.isFinite(v.panY)||
+   !['structure','coverage','delta'].includes(v.layer)||
+   (v.observationDate!==null&&v.observationDate!==undefined&&
+   (typeof v.observationDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v.observationDate))))
+   throw Error('Paramètres de visualisation invalides');
+ mapView={...v,zoom:v.zoom,panX:v.panX,panY:v.panY,layer:v.layer,observationDate:v.observationDate??null};
+}
+return {...raw,version:3,domains:ds,milestones:ms,positions,statementDates,mapBackground,mapView,businessResponses,updatedAt:raw.updatedAt||new Date().toISOString()}}
 const uid=()=>globalThis.crypto?.randomUUID?.()||('id-'+Date.now()+'-'+Math.random().toString(36).slice(2));
 const today=()=>new Date().toLocaleDateString('sv-SE');
 let db;try{const embedded=JSON.parse(document.getElementById('data-hub-embedded-state').textContent);db=embedded.bootstrap?sample():valid(embedded)}catch(e){alert('Le contenu embarqué est invalide : '+e.message);db=sample()}
