@@ -1071,7 +1071,7 @@ $('importFile').onchange=async e=>{
   download();
   const msg='Le JSON « '+file.name+' » contient '+candidate.domains.length+' domaines, '+candidate.statementDates.length+' dates et '+candidate.milestones.length+' taux. Une sauvegarde du référentiel actuel vient d’être téléchargée. Remplacer les données courantes ?';
   if(!confirm(msg)){info.textContent='Import annulé : les données courantes sont conservées.';return}
-  linkedHtmlHandle=null;fileHandle=null; // Un référentiel importé remplace la base, pas une modification de la copie précédente.
+  linkedHtmlHandle=null;fileHandle=null;importPending=true; // Un import validé est un remplacement explicite du référentiel.
   db=candidate;
   matrixDrafts.clear();
   selected=null;date=today();applyMapView();layoutPending=true;
@@ -1241,7 +1241,7 @@ async function performHtmlSave(options={}){
       !sameData(remote.mapView||null,persistedState.mapView||null) ||
       !sameData(remote.milestones,persistedState.milestones) ||
       !sameData(remote.positions||{},persistedState.positions||{}) || !sameData(remote.statementDates||[],persistedState.statementDates||[]) || (remote.mapBackground||'#ffffff')!==(persistedState.mapBackground||'#ffffff');
-    const proposed=diverged?mergeThreeWay(persistedState,local,remote):local;
+    const proposed=importPending?valid(local):(diverged?mergeThreeWay(persistedState,local,remote):local);
     if(!dirty){
       db=remote;persistedState=structuredClone(remote);currentRevision=disk.revision;applyMapView();
       render();
@@ -1252,7 +1252,7 @@ async function performHtmlSave(options={}){
     await writeToFile(linkedHtmlHandle,serializeHtmlDocument(nextRevision,proposed));
     currentRevision=nextRevision;
     persistedState=structuredClone(proposed);
-    if(serial===editSerial){db=proposed;dirty=false;layoutPending=false}
+    if(serial===editSerial){db=proposed;dirty=false;layoutPending=false;importPending=false}
     else{db=mergeThreeWay(local,db,proposed);dirty=true;queueHtmlAutoSave()}
     render();
     writeNotice((diverged?'Versions fusionnées sans conflit. ':'')+'Enregistrement confirmé dans « '+savedHtmlName+' ».');
