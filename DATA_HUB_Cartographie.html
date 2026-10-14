@@ -1040,7 +1040,7 @@ $('mapBackgroundPicker').addEventListener('input',event=>{
  if(event.target.value===db.mapBackground)return;
  db.mapBackground=event.target.value;layoutPending=true;touch({autoSave:false});
 });viewport.addEventListener('pointercancel',()=>{nodeDrag=null;drag=null;renderMap()});
-function download(){const data=exportSnapshot();const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.href=url;a.download='data-hub-cartographie.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function download(options={}){const data=options.committedOnly?valid({...db,mapView:mapViewSnapshot()}):exportSnapshot();const a=document.createElement('a'),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.href=url;a.download='data-hub-cartographie.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 $('exportButton').onclick=()=>{try{download()}catch(err){alert(err.message)}};
 const supported=()=>!!window.showOpenFilePicker&&!!window.showSaveFilePicker;
 async function loadHandle(h){const f=await h.getFile(),raw=JSON.parse(await f.text()),loaded=valid(raw);if(dirty&&!confirm('Remplacer les modifications locales non enregistrées ?'))return;db=loaded;fileHandle=h;dirty=false;selected=null;render();go('map')}
@@ -1067,8 +1067,8 @@ $('importFile').onchange=async e=>{
   if(matrixDrafts.size>0||dirty){
    if(!confirm('Des modifications locales ne sont pas enregistrées. Continuer l’import après sauvegarde du référentiel courant ?'))return;
   }
-  // La copie de sécurité est téléchargée avant toute mutation ; elle reste indépendante du fichier HTML.
-  download();
+  // Sauvegarde de sécurité des données déjà validées. Les brouillons de la matrice restent exclus.
+  download({committedOnly:true});
   const msg='Le JSON « '+file.name+' » contient '+candidate.domains.length+' domaines, '+candidate.statementDates.length+' dates et '+candidate.milestones.length+' taux. Une sauvegarde du référentiel actuel vient d’être téléchargée. Remplacer les données courantes ?';
   if(!confirm(msg)){info.textContent='Import annulé : les données courantes sont conservées.';return}
   linkedHtmlHandle=null;fileHandle=null;importPending=true; // Un import validé est un remplacement explicite du référentiel.
