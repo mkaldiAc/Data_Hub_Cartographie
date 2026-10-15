@@ -265,3 +265,11 @@ Le JSON exporté inclut désormais :
 Un test exécutable a extrait le script et le JSON embarqué depuis le HTML actuel, généré en mémoire un HTML contenant une révision modifiée, puis relu ce nouveau HTML par le même parseur que l'application. Valeurs vérifiées après retour : 35 domaines, un métier, un jalon à 92 %, une position négative (-280, 91), le fond #123456 et la vue (zoom 115 %, translation X=10/Y=-20, calque couverture, date 14/10/2026). Aucun champ n'a été perdu.
 
 Le dernier chemin d'écriture JSON encore présent pour un dossier partagé utilise désormais lui aussi `exportSnapshot()`, afin d'appliquer le même contrat de données. Le retour d'expérience Chrome (autorisations de fichiers, interactions de navigation) reste une validation distincte de ces tests de sérialisation.
+
+## Cartographie — palette de couverture personnalisable (JSON v4)
+
+La palette est accessible depuis **Couleurs** dans la barre de la cartographie : modes `bands` (paliers fixes, par défaut) et `gradient` (interpolation entre seuils), 2 à 12 jalons dont 0 et 100 % obligatoires, choix des couleurs, personnalisation de la pastille (fond, texte, taille 16/18/20/22) et couleur des domaines non renseignés. Le bouton **Terminer** applique les réglages en mémoire ; **Enregistrer la carte** les écrit dans le HTML autorisé. L'export/import JSON v4 contient `coveragePalette` ; les JSON v1, v2 et v3 reçoivent la palette Aiguillon lors de la migration. La fusion de fichiers détecte les conflits de palettes.
+
+Les cartouches restent entièrement remplis, leurs noms gardent un contraste calculé à partir de la luminance du fond et les taux apparaissent dans une pastille indépendante au-dessus à droite (sans barre de progression inférieure). Le focus métier/direction est strict : seuls les domaines directement affectés et les dépendances reliant deux domaines retenus sont dessinés ; aucun domaine amont supplémentaire n'est affiché. La sélection n'altère pas le JSON.
+
+Audit technique : compilation JavaScript, migration v3 → v4, validation des seuils (doublons et bornes refusés), couleurs en mode gradient, sérialisation/relecture de la palette avec coordonnées négatives et métier affecté. Les interactions graphiques et la persistance sur disque via Chrome sont à confirmer sur poste Windows.
