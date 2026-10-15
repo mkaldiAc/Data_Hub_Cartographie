@@ -519,9 +519,10 @@ function coverageFill(value){
  return rgbHex(hexRgb(a.color).map((n,j)=>n+(hexRgb(b.color)[j]-n)*t));
 }
 function readableInk(hex){
- const light=hexRgb(hex).map(n=>{const v=n/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});
- const lum=.2126*light[0]+.7152*light[1]+.0722*light[2];
- return (1.05/(lum+.05))>=4.5?'#ffffff':'#203864';
+ const luminance=h=>{const light=hexRgb(h).map(n=>{const v=n/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});return .2126*light[0]+.7152*light[1]+.0722*light[2]};
+ const bg=luminance(hex),dark=luminance('#14213d');
+ const whiteRatio=1.05/(bg+.05),darkRatio=(Math.max(bg,dark)+.05)/(Math.min(bg,dark)+.05);
+ return whiteRatio>=darkRatio?'#ffffff':'#14213d';
 }
 let paletteDraft=null;
 function showPalettePanel(show){
