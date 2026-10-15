@@ -282,6 +282,36 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
 @media(max-width:900px){.business-row{grid-template-columns:minmax(190px,1fr) 72px 100px}.business-row .business-details{grid-column:1/-1;text-align:left}}
 @media(max-width:640px){.business-row{grid-template-columns:minmax(0,1fr) 65px}.business-row .business-meter{grid-column:1/-1}.business-domain-chip{max-width:170px}}
 
+
+/* Palette de couverture, configurée depuis la carte (et non l'administration). */
+#mapPanel{position:relative}
+#paletteToggle[aria-expanded="true"]{background:#dceafa;border-color:#8faadc;color:#203864}
+.coverage-palette-panel[hidden]{display:none!important}
+.coverage-palette-panel{position:absolute;right:16px;top:90px;z-index:80;width:min(410px,calc(100% - 32px));max-height:min(78vh,720px);overflow:auto;background:#fff;border:1px solid #a8bfd9;border-radius:10px;box-shadow:0 12px 32px #20386435;padding:16px;font-size:12px;color:#203864}
+.palette-panel-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.palette-panel-header strong{font-size:16px}
+.palette-panel-header button{border:0;background:transparent;color:#29467b;font-size:18px}
+.coverage-palette-panel p{margin:8px 0 13px;line-height:1.5;color:#586b83}
+.palette-field{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:600}
+.palette-field select{min-width:145px;padding:7px;border-radius:5px;border:1px solid #c9d2de;background:#fff}
+.palette-field input[type=color]{width:41px;height:33px;border:1px solid #d3dce8;padding:2px;border-radius:6px;cursor:pointer}
+.palette-editor-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 9px}
+.palette-editor-head button{padding:5px 9px;font-size:11px}
+.palette-stops{display:grid;gap:7px}
+.palette-stop{display:grid;grid-template-columns:60px 35px 1fr 26px;align-items:center;gap:9px;border:1px solid #e1e9f3;border-radius:6px;padding:6px 9px}
+.palette-stop input[type=number]{width:60px;min-width:0;font-size:12px;padding:6px;border:1px solid #cad6e4;border-radius:4px}
+.palette-stop input[type=color]{width:35px;height:30px;padding:2px;border:1px solid #cad6e4;border-radius:5px}
+.palette-stop-name{font-size:11px;color:#60718a}
+.palette-stop button{border:0;background:transparent;color:#637895;font-size:19px}
+.palette-stop button:disabled{opacity:.24;cursor:not-allowed}
+.palette-options{display:grid;gap:9px;padding:12px 0;border-top:1px solid #e5ebf2;margin-top:12px}
+.palette-message{min-height:16px;color:#a44532;font-size:11px}
+.palette-footer{display:flex;justify-content:flex-end;gap:9px;padding-top:9px;border-top:1px solid #e5ebf2}
+.coverage-palette-panel>small{display:block;margin-top:9px;color:#6f8095}
+#mapViewport .node .coverage-badge{pointer-events:none}
+#mapViewport .node .coverage-badge-text{font-family:var(--font);font-weight:800}
+#mapViewport .node .coverage-title{paint-order:stroke;stroke-width:1px;stroke-linejoin:round}
+@media(max-width:800px){.coverage-palette-panel{top:135px;right:8px;width:min(410px,calc(100% - 16px))}}
 </style></head>
 <body><div class="layout">
 <aside class="side"><div class="brand"><span class="logo"><svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="8" y="14" width="8" height="7" rx="1"/><path d="M6.5 10v2h5.5m5.5-2v2H12v2"/></svg></span><div>DATA HUB<small>CARTOGRAPHIE DES DONNÉES</small></div></div><nav aria-label="Navigation principale"><button data-view="map" class="active"><span class="nav-icon">▦</span> Cartographie</button><button data-view="admin"><span class="nav-icon">▤</span> Administration</button></nav><div class="side-foot"><span class="user-round">DH</span><div><b>DATA HUB</b><small>Entrepôt de données · Aiguillon</small></div></div></aside>
@@ -294,7 +324,25 @@ main{max-width:none;margin-left:0;flex:1;padding:20px 24px 36px}
     <div class="toggle" aria-label="Calque affiché"><button data-layer="structure" class="active">Structure seule</button><button data-layer="coverage">Couverture</button><button data-layer="delta">Évolution</button></div>
     <button class="btn secondary" id="fitButton">⊞ Recentrer</button>
     <label class="map-background-control" for="mapBackgroundPicker">Fond <input id="mapBackgroundPicker" type="color" value="#ffffff" title="Choisir la couleur de fond de la cartographie"></label>
+    <button class="btn secondary" type="button" id="paletteToggle" aria-expanded="false" aria-controls="palettePanel">◉ Couleurs</button>
     <button class="btn" id="saveMapLayout" type="button" title="Enregistrer les positions et le fond dans le fichier HTML">Enregistrer la carte</button><span class="business-focus-label" id="businessFocusLabel" hidden></span><button class="btn secondary" type="button" id="clearBusinessFocus" hidden>✕ Vue métier</button>
+  </div>
+  <div id="palettePanel" class="coverage-palette-panel" hidden aria-label="Personnaliser les couleurs de couverture">
+    <div class="palette-panel-header"><strong>Couleurs de couverture</strong><button id="paletteClose" type="button" aria-label="Fermer les couleurs">✕</button></div>
+    <p>Définissez les seuils et leurs aplats de couleur. Le pourcentage est toujours dans une pastille au-dessus du cartouche.</p>
+    <label class="palette-field">Coloration <select id="paletteMode">
+      <option value="bands">Paliers fixes</option><option value="gradient">Progression continue</option></select></label>
+    <div class="palette-editor-head"><strong>Jalons (% et couleur)</strong><button type="button" id="paletteAdd" class="btn secondary">+ Jalon</button></div>
+    <div id="paletteStops" class="palette-stops"></div>
+    <div class="palette-options">
+      <label class="palette-field">Couleur sans couverture <input id="paletteMissing" type="color"></label>
+      <label class="palette-field">Fond de la pastille <input id="paletteBadgeBackground" type="color"></label>
+      <label class="palette-field">Texte de la pastille <input id="paletteBadgeText" type="color"></label>
+      <label class="palette-field">Taille du pourcentage <select id="paletteBadgeSize"><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="22">22</option></select></label>
+    </div>
+    <div id="paletteMessage" class="palette-message" role="status"></div>
+    <div class="palette-footer"><button class="btn secondary" type="button" id="paletteReset">Palette Aiguillon</button><button class="btn" type="button" id="paletteDone">Terminer</button></div>
+    <small>Pour conserver ces réglages dans le fichier, utilisez « Enregistrer la carte ».</small>
   </div>
   <div class="map-time-bar">
     <div class="map-time-caption"><span>Observation</span><strong id="dateLabel"></strong></div>
@@ -367,8 +415,45 @@ const names=[
 ['Impayés','Quittancement - relevés de comptes'],
 ['Contentieux CSR','Impayés']
 ];
-function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:3,domains,milestones:[],positions:{},statementDates:[],mapBackground:'#ffffff',mapView:null,businessResponses:[],updatedAt:new Date().toISOString()}}
-function valid(raw){if(!raw||typeof raw!=='object'||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');if(raw.version!==undefined&&(!Number.isInteger(Number(raw.version))||Number(raw.version)>3||Number(raw.version)<1))throw Error('Version de schéma JSON incompatible : '+raw.version);const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {...d,id:d.id,name:d.name.trim().slice(0,100),description:String(d.description||'').slice(0,1000),parents:[...d.parents]}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>{
+
+/* Contrat stable de la palette des couvertures (JSON v4).
+   Les anciennes versions reçoivent la palette Aiguillon lors de la migration. */
+function defaultCoveragePalette(){
+ return {mode:'bands',stops:[
+  {min:0,color:'#eaf1fb'},{min:25,color:'#c6d8ef'},
+  {min:50,color:'#8ca9d1'},{min:75,color:'#4168a5'},
+  {min:100,color:'#203864'}],
+  percentLabel:{position:'top-right-outside',background:'#ffffff',textColor:'#203864',fontSize:18},
+  missingData:{color:'#ffffff',label:'—'}};
+}
+function normalizeCoveragePalette(input){
+ const base=defaultCoveragePalette();
+ if(input===undefined||input===null)return base;
+ if(!input||typeof input!=='object'||Array.isArray(input))throw Error('Palette de couverture invalide.');
+ if(!['bands','gradient'].includes(input.mode))throw Error('Mode de couleur inconnu.');
+ if(!Array.isArray(input.stops)||input.stops.length<2||input.stops.length>12)throw Error('La palette doit comporter entre 2 et 12 jalons.');
+ const hex=(v,field)=>{
+  if(typeof v!=='string'||!/^#[0-9a-fA-F]{6}$/.test(v))throw Error('Couleur invalide : '+field);
+  return v.toLowerCase();
+ };
+ const stops=input.stops.map((p,i)=>{
+  if(!p||typeof p!=='object'||!Number.isInteger(p.min)||p.min<0||p.min>100)throw Error('Seuil invalide au jalon '+(i+1));
+  return {...p,min:p.min,color:hex(p.color,'jalon '+p.min)};
+ }).sort((a,b)=>a.min-b.min);
+ if(stops[0].min!==0||stops[stops.length-1].min!==100||stops.some((p,i)=>i>0&&p.min===stops[i-1].min))
+  throw Error('Les seuils doivent être distincts et comprendre 0 et 100 %.');
+ const badge=input.percentLabel??base.percentLabel;
+ if(typeof badge!=='object'||Array.isArray(badge)||badge.position!=='top-right-outside'||
+  ![16,18,20,22].includes(badge.fontSize))throw Error('Configuration de la pastille de pourcentage invalide.');
+ const missing=input.missingData??base.missingData;
+ if(typeof missing!=='object'||Array.isArray(missing)||missing.label!=='—')throw Error('Configuration des valeurs non renseignées invalide.');
+ return {...input,mode:input.mode,stops,
+  percentLabel:{...badge,position:'top-right-outside',background:hex(badge.background,'pastille'),textColor:hex(badge.textColor,'texte'),fontSize:badge.fontSize},
+  missingData:{...missing,color:hex(missing.color,'non renseigné'),label:'—'}};
+}
+
+function sample(){const domains=names.map(([name],i)=>({id:'d'+(i+1),name,description:'',parents:[]}));names.forEach(([n,p],i)=>{domains[i].parents=p?p.split('|').map(t=>domains.find(d=>d.name===t)?.id).filter(Boolean):[]});return {version:4,domains,milestones:[],positions:{},statementDates:[],mapBackground:'#ffffff',mapView:null,businessResponses:[],coveragePalette:defaultCoveragePalette(),updatedAt:new Date().toISOString()}}
+function valid(raw){if(!raw||typeof raw!=='object'||!Array.isArray(raw.domains)||!Array.isArray(raw.milestones))throw Error('Structure JSON non reconnue');if(raw.version!==undefined&&(!Number.isInteger(Number(raw.version))||Number(raw.version)>4||Number(raw.version)<1))throw Error('Version de schéma JSON incompatible : '+raw.version);const ids=new Set();const ds=raw.domains.map(d=>{if(typeof d.id!=='string'||!d.id||ids.has(d.id)||typeof d.name!=='string'||!d.name.trim()||!Array.isArray(d.parents))throw Error('Domaine incorrect ou identifiant en double');ids.add(d.id);return {...d,id:d.id,name:d.name.trim().slice(0,100),description:String(d.description||'').slice(0,1000),parents:[...d.parents]}});for(const d of ds)for(const p of d.parents)if(!ids.has(p)||p===d.id)throw Error('Dépendance invalide pour '+d.name);let cycle=false;const visited=new Set(),stack=new Set();function visit(id){if(stack.has(id)){cycle=true;return}if(visited.has(id))return;stack.add(id);const d=ds.find(x=>x.id===id);d.parents.forEach(visit);stack.delete(id);visited.add(id)}ds.forEach(d=>visit(d.id));if(cycle)throw Error('La cartographie ne peut pas contenir de dépendance circulaire');const ms=raw.milestones.map(m=>{
  if(!m||typeof m!=='object'||m.value===null||m.value===undefined||m.value===''||typeof m.value==='boolean')throw Error('Jalon sans pourcentage valide');
  return {...m,id:String(m.id||uid()),domainId:String(m.domainId),date:String(m.date),value:Number(m.value),note:String(m.note||'').slice(0,1000)};
 });if(ms.some(m=>!ids.has(m.domainId)||!/^\d{4}-\d{2}-\d{2}$/.test(m.date)||!Number.isFinite(m.value)||m.value<0||m.value>100))throw Error('Jalon invalide');
@@ -411,7 +496,7 @@ if(raw.mapView!==undefined&&raw.mapView!==null){
    throw Error('Paramètres de visualisation invalides');
  mapView={...v,zoom:v.zoom,panX:v.panX,panY:v.panY,layer:v.layer,observationDate:v.observationDate??null};
 }
-return {...raw,version:3,domains:ds,milestones:ms,positions,statementDates,mapBackground,mapView,businessResponses,updatedAt:raw.updatedAt||new Date().toISOString()}}
+return {...raw,version:4,domains:ds,milestones:ms,positions,statementDates,mapBackground,mapView,businessResponses,coveragePalette:normalizeCoveragePalette(raw.coveragePalette),updatedAt:raw.updatedAt||new Date().toISOString()}}
 const uid=()=>globalThis.crypto?.randomUUID?.()||('id-'+Date.now()+'-'+Math.random().toString(36).slice(2));
 const today=()=>new Date().toLocaleDateString('sv-SE');
 let db;try{const embedded=JSON.parse(document.getElementById('data-hub-embedded-state').textContent);db=embedded.bootstrap?sample():valid(embedded)}catch(e){alert('Le contenu embarqué est invalide : '+e.message);db=sample()}
@@ -1150,6 +1235,12 @@ async function verifyAccess(handle){
 }
 
 function sameData(a,b){return JSON.stringify(a)===JSON.stringify(b)}
+function mergePalette(base,local,remote){
+ const b=normalizeCoveragePalette(base),l=normalizeCoveragePalette(local),r=normalizeCoveragePalette(remote);
+ const leftChanged=!sameData(b,l),rightChanged=!sameData(b,r);
+ if(leftChanged&&rightChanged&&!sameData(l,r))throw Error('Conflit sur les seuils ou couleurs de couverture.');
+ return leftChanged?l:r;
+}
 function mergeMapView(base,local,remote){const b=base??null,l=local??null,r=remote??null;const lc=!sameData(l,b),rc=!sameData(r,b);if(lc&&rc&&!sameData(l,r))throw Error('Conflit sur le cadrage et le zoom de la cartographie.');return lc?l:r}
 function mergeBackground(base,local,remote){const lc=local!==base,rc=remote!==base;if(lc&&rc&&local!==remote)throw Error('Conflit sur le fond de carte.');return lc?local:remote}
 function mergePositions(base,local,remote){
@@ -1182,12 +1273,13 @@ function mergeThreeWay(base,local,remote){
     }
     return out;
   };
-  return valid({...remote,version:3,
+  return valid({...remote,version:4,
     domains:mergeSet('le domaine',base.domains,local.domains,remote.domains,x=>x.id),
     businessResponses:mergeSet('le métier',base.businessResponses||[],local.businessResponses||[],remote.businessResponses||[],x=>x.id),
     milestones:mergeSet('le jalon',base.milestones,local.milestones,remote.milestones,x=>x.domainId+'|'+x.date),
     positions:mergePositions(base.positions||{},local.positions||{},remote.positions||{}),
     mapBackground:mergeBackground(base.mapBackground||'#ffffff',local.mapBackground||'#ffffff',remote.mapBackground||'#ffffff'),
+    coveragePalette:mergePalette(base.coveragePalette,local.coveragePalette,remote.coveragePalette),
     mapView:mergeMapView(base.mapView,local.mapView,remote.mapView),
     statementDates:[...new Set([...(local.statementDates||[]),...(remote.statementDates||[])])].sort(),
     updatedAt:new Date().toISOString()});
@@ -1237,7 +1329,8 @@ async function performHtmlSave(options={}){
     const local=structuredClone({...db,mapView:mapViewSnapshot()}),serial=editSerial;
     const diverged=disk.revision!==currentRevision ||
       !sameData(remote.domains,persistedState.domains) ||
-      !sameData(remote.businessResponses||[],persistedState.businessResponses||[]) ||
+       !sameData(remote.businessResponses||[],persistedState.businessResponses||[]) ||
+      !sameData(remote.coveragePalette||defaultCoveragePalette(),persistedState.coveragePalette||defaultCoveragePalette()) ||
       !sameData(remote.mapView||null,persistedState.mapView||null) ||
       !sameData(remote.milestones,persistedState.milestones) ||
       !sameData(remote.positions||{},persistedState.positions||{}) || !sameData(remote.statementDates||[],persistedState.statementDates||[]) || (remote.mapBackground||'#ffffff')!==(persistedState.mapBackground||'#ffffff');
