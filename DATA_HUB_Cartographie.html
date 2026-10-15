@@ -506,6 +506,77 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const percent=(id,d=date)=>{const ms=db.milestones.filter(m=>m.domainId===id&&m.date<=d).sort((a,b)=>b.date.localeCompare(a.date));return ms.length?ms[0].value:null};
 const delta=(id,d=date)=>{const prev=db.milestones.filter(m=>m.domainId===id&&m.date<d).sort((a,b)=>b.date.localeCompare(a.date))[0];const cur=percent(id,d);return cur==null?null:cur-(prev?.value??0)};
 const color=v=>{if(v===null)return '#fff';const t=Math.max(0,Math.min(100,v))/100,a=[234,241,251],b=[32,56,100];return '#'+a.map((n,i)=>Math.round(n+(b[i]-n)*t).toString(16).padStart(2,'0')).join('')};
+
+function hexRgb(hex){return [1,3,5].map(i=>parseInt(hex.slice(i,i+2),16))}
+function rgbHex(rgb){return '#'+rgb.map(v=>Math.round(v).toString(16).padStart(2,'0')).join('')}
+function coverageFill(value){
+ const palette=db.coveragePalette||defaultCoveragePalette();
+ if(value===null||value===undefined)return palette.missingData.color;
+ const stops=palette.stops;let i=0;
+ while(i+1<stops.length&&stops[i+1].min<=value)i++;
+ if(palette.mode==='bands'||i===stops.length-1)return stops[i].color;
+ const a=stops[i],b=stops[i+1],t=(value-a.min)/(b.min-a.min);
+ return rgbHex(hexRgb(a.color).map((n,j)=>n+(hexRgb(b.color)[j]-n)*t));
+}
+function readableInk(hex){
+ const light=hexRgb(hex).map(n=>{const v=n/255;return v<=.04045?v/12.92:((v+.055)/1.055)**2.4});
+ const lum=.2126*light[0]+.7152*light[1]+.0722*light[2];
+ return (1.05/(lum+.05))>=4.5?'#ffffff':'#203864';
+}
+let paletteDraft=null;
+function showPalettePanel(show){
+ $('palettePanel').hidden=!show;$('paletteToggle').setAttribute('aria-expanded',show?'true':'false');
+ if(show){paletteDraft=structuredClone(db.coveragePalette);renderPaletteEditor()}
+ else paletteDraft=null;
+}
+function renderPaletteEditor(){
+ if(!paletteDraft)return;
+ $('paletteMode').value=paletteDraft.mode;
+ $('paletteMissing').value=paletteDraft.missingData.color;
+ $('paletteBadgeBackground').value=paletteDraft.percentLabel.background;
+ $('paletteBadgeText').value=paletteDraft.percentLabel.textColor;
+ $('paletteBadgeSize').value=String(paletteDraft.percentLabel.fontSize);
+ $('paletteStops').innerHTML=paletteDraft.stops.map((stop,i)=>
+  '<div class="palette-stop"><input type="number" min="0" max="100" step="1" value="'+stop.min+'" data-palette-threshold="'+i+'" '+((stop.min===0||stop.min===100)?'disabled':'')+' aria-label="Seuil en pourcentage">'+
+  '<input type="color" value="'+stop.color+'" data-palette-color="'+i+'" aria-label="Couleur du jalon">'+
+  '<span class="palette-stop-name">'+(stop.min===0?'Départ':stop.min===100?'Couverture complète':'À partir de '+stop.min+' %')+'</span>'+
+  '<button type="button" data-palette-delete="'+i+'" '+((stop.min===0||stop.min===100)?'disabled':'')+' aria-label="Supprimer le jalon">×</button></div>'
+ ).join('');
+ $('paletteStops').querySelectorAll('[data-palette-threshold]').forEach(el=>el.onchange=()=>{
+  paletteDraft.stops[Number(el.dataset.paletteThreshold)].min=Number(el.value);
+  try{paletteDraft=normalizeCoveragePalette(paletteDraft);$('paletteMessage').textContent='';renderPaletteEditor()}
+  catch(error){$('paletteMessage').textContent=error.message}
+ });
+ $('paletteStops').querySelectorAll('[data-palette-color]').forEach(el=>el.oninput=()=>{
+  paletteDraft.stops[Number(el.dataset.paletteColor)].color=el.value;
+  $('paletteMessage').textContent='';
+ });
+ $('paletteStops').querySelectorAll('[data-palette-delete]').forEach(el=>el.onclick=()=>{
+  paletteDraft.stops.splice(Number(el.dataset.paletteDelete),1);
+  renderPaletteEditor();
+ });
+}
+$('paletteToggle').onclick=()=>showPalettePanel($('palettePanel').hidden);
+$('paletteClose').onclick=()=>showPalettePanel(false);
+$('paletteMode').onchange=e=>{paletteDraft.mode=e.target.value};
+$('paletteMissing').oninput=e=>{paletteDraft.missingData.color=e.target.value};
+$('paletteBadgeBackground').oninput=e=>{paletteDraft.percentLabel.background=e.target.value};
+$('paletteBadgeText').oninput=e=>{paletteDraft.percentLabel.textColor=e.target.value};
+$('paletteBadgeSize').onchange=e=>{paletteDraft.percentLabel.fontSize=Number(e.target.value)};
+$('paletteAdd').onclick=()=>{
+ if(paletteDraft.stops.length>=12){$('paletteMessage').textContent='Maximum 12 jalons.';return}
+ const occupied=new Set(paletteDraft.stops.map(p=>p.min));
+ let threshold=50;while(occupied.has(threshold)&&threshold<100)threshold++;
+ if(threshold>=100){$('paletteMessage').textContent='Aucun seuil disponible.';return}
+ paletteDraft.stops.push({min:threshold,color:'#87a6d0'});
+ paletteDraft.stops.sort((a,b)=>a.min-b.min);renderPaletteEditor();
+};
+$('paletteReset').onclick=()=>{paletteDraft=defaultCoveragePalette();renderPaletteEditor()};
+$('paletteDone').onclick=()=>{
+ try{const next=normalizeCoveragePalette(paletteDraft);db.coveragePalette=next;showPalettePanel(false);touch({autoSave:false})}
+ catch(error){$('paletteMessage').textContent=error.message}
+};
+
 const dates=()=>[...new Set([...(db.statementDates||[]),...db.milestones.map(m=>m.date)])].filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
 const dayNumber=d=>Math.floor(Date.parse(d+'T00:00:00Z')/86400000);
 const dayLabel=d=>d.split('-').reverse().join('/');
@@ -654,28 +725,34 @@ function renderMap(){
     for(const parent of obj.parents){
       const a=d.pos.get(parent);if(!a)continue;
       const isHot=selected&&(selected===obj.id||selected===parent);
-      const activeRelation=focus&&focus.related.has(parent)&&focus.related.has(obj.id);
+      const activeRelation=focus&&focus.primary.has(parent)&&focus.primary.has(obj.id);
       const edgeClass=focus?(activeRelation?' focus-active':' focus-dim'):(isHot?' active':'');
-      newSvg('path',{d:linkCurve(a,b),class:'edge'+edgeClass},outer);
+      if(!focus||activeRelation)newSvg('path',{d:linkCurve(a,b),class:'edge'+edgeClass},outer);
     }
   }
   for(const obj of db.domains){
+    if(focus&&!focus.primary.has(obj.id))continue;
     const p=d.pos.get(obj.id),val=layer==='delta'?delta(obj.id):percent(obj.id);
     const focusClass=focus?(focus.primary.has(obj.id)?' focus-primary':focus.related.has(obj.id)?' focus-context':' focus-dim'):'';
     const g=newSvg('g',{class:'node'+(obj.id===selected?' selected':'')+focusClass,
       transform:'translate('+p.x+' '+p.y+')',tabindex:0,role:'button',
       'aria-label':obj.name},outer);
-    newSvg('rect',{width:p.w,height:p.h,rx:10,style:'fill:'+(layer==='coverage'?color(percent(obj.id)):'#fff')+
-      ';stroke:'+(focus?.primary.has(obj.id)?'#007b91':focus?.related.has(obj.id)?'#6b9db4':'#b9cbdc')+
-      ';stroke-width:'+(focus?.primary.has(obj.id)?'3':'1.5')},g);
-    
+
+    const coverage=percent(obj.id),shade=layer==='coverage'?coverageFill(coverage):'#ffffff';
+    const ink=layer==='coverage'?readableInk(shade):'#203864';
+    newSvg('rect',{width:p.w,height:p.h,rx:10,style:'fill:'+shade+
+      ';stroke:'+(focus?'#007b91':'#b9cbdc')+';stroke-width:'+(focus?'2.6':'1.5')},g);
+    drawText(g,obj.name,layer==='coverage'?null:val);
+    g.querySelectorAll('text').forEach(textEl=>{textEl.setAttribute('fill',ink);textEl.setAttribute('style','fill:'+ink)});
     if(layer!=='structure'){
-      newSvg('rect',{x:0,y:p.h-6,width:p.w,height:6,rx:3,fill:'#ecf0f4',stroke:'none'},g);
-      newSvg('rect',{x:0,y:p.h-6,width:p.w*(Math.abs(val||0)/100),height:6,rx:3,fill:color(val),stroke:'none'},g);
-      const pc=newSvg('text',{class:'percent',x:245,y:22,'text-anchor':'end',style:'fill:'+color(val)},g);
-      pc.textContent=val===null?'—':layer==='delta'?(val>0?'+':'')+val+' pt':val+' %';
+      const badge=db.coveragePalette.percentLabel,amount=val===null?'—':layer==='delta'?(val>0?'+':'')+val+' pt':val+' %';
+      const width=layer==='delta'?92:76,x=p.w-width+2,y=-18;
+      const badgeGroup=newSvg('g',{class:'coverage-badge'},g);
+      newSvg('rect',{x,y,width,height:37,rx:8,style:'fill:'+badge.background+';stroke:#9bb0c8;stroke-width:1.5'},badgeGroup);
+      const textEl=newSvg('text',{class:'coverage-badge-text',x:x+width/2,y:y+25,
+       'font-size':badge.fontSize,'text-anchor':'middle',style:'fill:'+badge.textColor},badgeGroup);
+      textEl.textContent=amount;
     }
-    drawText(g,obj.name,val);if(layer==='coverage'&&percent(obj.id)>=65){g.querySelectorAll('text').forEach(t=>t.style.fill='#fff')}
     g.addEventListener('pointerdown',event=>{
       if(event.button!==0)return;
       event.stopPropagation();event.preventDefault();
@@ -690,7 +767,7 @@ function renderMap(){
   }
   $('mapCount').textContent=db.domains.length+' domaines · '+db.domains.reduce((n,o)=>n+o.parents.length,0)+' dépendances';
   $('zoomInput').value=String(Number((zoom*100).toFixed(1)));
-  $('legend').innerHTML=layer==='structure'?'Domaines et dépendances':layer==='coverage'?[0,25,50,75,100].map(n=>'<span><i style="background:'+color(n)+';border:1px solid #b9cbdc"></i>'+n+' %</span>').join('')+'<span>□ Non renseigné</span>':'Évolution en points depuis le dernier jalon';
+  $('legend').innerHTML=layer==='structure'?'Domaines et dépendances':layer==='coverage'?db.coveragePalette.stops.map(p=>'<span><i style="background:'+p.color+';border:1px solid #b9cbdc"></i>'+p.min+' %</span>').join('')+'<span>□ Non renseigné</span>':'Évolution en points depuis le dernier jalon';
 }
 
 function businessMaturity(entry,at=date){
@@ -771,13 +848,6 @@ function getBusinessFocus(){
  if(!primary.size)return null;
  const byId=new Map(db.domains.map(d=>[d.id,d]));
  const related=new Set(primary);
- // Montrer tout le chemin des dépendances en amont ; ne pas étendre aux descendants
- // non affectés au métier (ils ne font pas partie de son besoin propre).
- const visit=id=>{
-  const parentIds=byId.get(id)?.parents||[];
-  for(const parent of parentIds)if(!related.has(parent)){related.add(parent);visit(parent)}
- };
- [...primary].forEach(visit);
  const title=businessFocus.kind==='direction'
   ?businessFocus.key
   :items[0].direction+' · '+items[0].name;
@@ -808,7 +878,7 @@ function activateBusinessFocus(kind,key){
  if(!focus){businessFocus=null;return}
  selected=null;renderDetail();
  // Recadrer sans mutation de positions, ni de JSON ni de sauvegarde.
- fitToDomainIds(focus.related);
+ fitToDomainIds(focus.primary);
  renderMap();
  renderBusinessAnalysis();
  $('mapPanel').scrollIntoView({behavior:'smooth',block:'start'});
